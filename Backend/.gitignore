@@ -1,0 +1,11 @@
+# Environment variables (Password safety)
+.env
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# React node_modules
+node_modules/
