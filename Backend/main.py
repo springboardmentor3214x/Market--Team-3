@@ -17,10 +17,18 @@ app = FastAPI(
     description="Module 1 (Auth & Workspace) + Module 2 (Stock Search & Market Data Collection)"
 )
 
-# Enable CORS so React Frontend (localhost:3000 or 5173) can talk to FastAPI
+# Enable CORS so React Frontend (localhost or 127.0.0.1 on any port) can talk to FastAPI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

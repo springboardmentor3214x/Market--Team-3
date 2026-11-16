@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import LoginPage from "./components/Login/LoginPage";
 import {
   registerUser,
   loginUser,
@@ -134,63 +135,18 @@ function App() {
   };
 
   // ==========================================
-  // VIEW 1: LOGIN & REGISTRATION SCREEN
+  // VIEW 1: IMMERSIVE 3D FINTECH LOGIN EXPERIENCE (MEMBER 2)
   // ==========================================
   if (!token) {
     return (
-      <div className="auth-container">
-        <h2>{isLoginView ? "Sign In to Research Workspace" : "Create Account"}</h2>
-        <p style={{ color: "#94a3b8", fontSize: "14px" }}>
-          AI-Powered Multi-Agent Stock Research Analyst
-        </p>
-
-        {authMessage.text && (
-          <div className={authMessage.type === "error" ? "alert-error" : "alert-success"}>
-            {authMessage.text}
-          </div>
-        )}
-
-        <form onSubmit={handleAuthSubmit}>
-          <div className="form-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              required
-              placeholder="ankit@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              required
-              placeholder="Enter password (min 6 chars)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <button type="submit" className="btn" style={{ width: "100%", marginTop: "20px" }}>
-            {isLoginView ? "Login" : "Register"}
-          </button>
-        </form>
-
-        <p style={{ marginTop: "16px", fontSize: "14px", textAlign: "center", color: "#94a3b8" }}>
-          {isLoginView ? "New user? " : "Already have an account? "}
-          <span
-            style={{ color: "#38bdf8", cursor: "pointer", fontWeight: 600 }}
-            onClick={() => {
-              setIsLoginView(!isLoginView);
-              setAuthMessage({ type: "", text: "" });
-            }}
-          >
-            {isLoginView ? "Create an account" : "Login here"}
-          </span>
-        </p>
-      </div>
+      <LoginPage
+        onLoginSuccess={(jwtToken, loggedInEmail, loggedInUserId) => {
+          localStorage.setItem("jwt_token", jwtToken);
+          localStorage.setItem("user_email", loggedInEmail);
+          setUserEmail(loggedInEmail);
+          setToken(jwtToken);
+        }}
+      />
     );
   }
 

@@ -15,25 +15,43 @@ const getAuthHeaders = () => {
 // --- MODULE 1: AUTH & WORKSPACE APIS ---
 
 export const registerUser = async (email, password) => {
-  const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || "Registration failed");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Registration failed");
+    return data;
+  } catch (err) {
+    if (err.message && err.message.includes("Failed to fetch")) {
+      throw new Error(
+        "Unable to connect to backend at http://127.0.0.1:8000. Please ensure the FastAPI server is running."
+      );
+    }
+    throw err;
+  }
 };
 
 export const loginUser = async (email, password) => {
-  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || "Invalid credentials");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Invalid credentials");
+    return data;
+  } catch (err) {
+    if (err.message && err.message.includes("Failed to fetch")) {
+      throw new Error(
+        "Unable to connect to backend at http://127.0.0.1:8000. Please ensure the FastAPI server is running."
+      );
+    }
+    throw err;
+  }
 };
 
 export const fetchWorkspace = async () => {
