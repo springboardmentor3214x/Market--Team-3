@@ -206,18 +206,25 @@ export default function WorkspaceScene3D() {
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    // 6. Mouse Parallax Interaction
+    // 6. Mouse & Scroll Parallax Interaction
     let mouseX = 0;
     let mouseY = 0;
     let targetX = 0;
     let targetY = 0;
+    let currentScroll = 0;
+    let targetScroll = 0;
 
     const handleMouseMove = (e) => {
       mouseX = (e.clientX / window.innerWidth) * 2 - 1;
       mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
     };
 
+    const handleScroll = () => {
+      targetScroll = window.scrollY || document.documentElement.scrollTop;
+    };
+
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     // 7. Window Resize
     const handleResize = () => {
@@ -237,14 +244,20 @@ export default function WorkspaceScene3D() {
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth camera interpolation
+      // Smooth camera interpolation with scroll-reactive parallax
       if (!prefersReducedMotion) {
         targetX += (mouseX * 4 - targetX) * 0.03;
         targetY += (mouseY * 3 - targetY) * 0.03;
+        currentScroll += (targetScroll - currentScroll) * 0.06;
 
         camera.position.x = targetX;
-        camera.position.y = 15 + targetY;
-        camera.lookAt(0, 0, 0);
+        camera.position.y = 15 + targetY - currentScroll * 0.015;
+        camera.position.z = 45 + currentScroll * 0.01;
+        camera.lookAt(0, -currentScroll * 0.008, 0);
+
+        // Parallax shift crystals and particles with scroll
+        crystalsGroup.position.y = -currentScroll * 0.012;
+        particles.position.y = -currentScroll * 0.018;
 
         // Animate 3D market terrain wave
         const pos = planeGeo.attributes.position;
@@ -280,6 +293,7 @@ export default function WorkspaceScene3D() {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
 
       if (renderer.domElement && container.contains(renderer.domElement)) {

@@ -33,6 +33,7 @@
   color: var(--ws-text-primary);
   font-family: var(--ws-font-sans);
   overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 /* Ambient Radial Glows & Grid (Matches Login Page) */

@@ -290,7 +290,13 @@ export default function Workspace({
                   transition={{ duration: 0.6 }}
                 >
                   {/* Company Profile Header Card (Requirement 6 & 9) */}
-                  <div className="ws-glass-card">
+                  <motion.div
+                    className="ws-glass-card"
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.55, ease: "easeOut" }}
+                  >
                     <div className="ws-company-header">
                       <div className="ws-company-title-area">
                         <h2>
@@ -378,19 +384,32 @@ export default function Workspace({
                         {stockResult.company_profile.description.slice(0, 520)}...
                       </p>
                     )}
-                  </div>
+                  </motion.div>
 
                   {/* 3. Interactive Recharts Price & Volume Chart (Requirement 1 & 4) */}
-                  <StockPriceChart
-                    ohlcvData={stockResult.ohlcv_data}
-                    currency={stockResult.source_metadata.currency}
-                    activePeriod={period}
-                    onPeriodChange={handlePeriodChange}
-                    loading={loading}
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 28 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.12 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  >
+                    <StockPriceChart
+                      ohlcvData={stockResult.ohlcv_data}
+                      currency={stockResult.source_metadata.currency}
+                      activePeriod={period}
+                      onPeriodChange={handlePeriodChange}
+                      loading={loading}
+                    />
+                  </motion.div>
 
                   {/* 4. Data Validation & Quality Summary Card (Requirement 8) */}
-                  <div className="ws-glass-card">
+                  <motion.div
+                    className="ws-glass-card"
+                    initial={{ opacity: 0, y: 28 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  >
                     <div className="ws-card-header">
                       <div className="ws-card-title">
                         <ShieldCheck size={16} className="ws-card-title-icon" />
@@ -449,10 +468,16 @@ export default function Workspace({
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* 5. Historical OHLCV Data Table (Requirement 5) */}
-                  <div className="ws-glass-card">
+                  <motion.div
+                    className="ws-glass-card"
+                    initial={{ opacity: 0, y: 28 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.12 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  >
                     <div className="ws-card-header">
                       <div className="ws-card-title">
                         <BarChart2 size={16} className="ws-card-title-icon" />
@@ -499,14 +524,21 @@ export default function Workspace({
                         </tbody>
                       </table>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* 6. Corporate Financial Statements (Annual & Quarterly) (Requirement 7) */}
-                  <FinancialStatementsView
-                    financialStatements={stockResult.financial_statements}
-                    ticker={stockResult.source_metadata.ticker}
-                    currency={stockResult.source_metadata.currency}
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 28 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.12 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  >
+                    <FinancialStatementsView
+                      financialStatements={stockResult.financial_statements}
+                      ticker={stockResult.source_metadata.ticker}
+                      currency={stockResult.source_metadata.currency}
+                    />
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
