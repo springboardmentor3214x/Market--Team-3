@@ -12,7 +12,9 @@ const getAuthHeaders = () => {
   };
 };
 
-// --- MODULE 1: AUTH & WORKSPACE APIS ---
+// ==========================================
+// MODULE 1: AUTH & WORKSPACE APIS
+// ==========================================
 
 export const registerUser = async (email, password) => {
   try {
@@ -85,7 +87,48 @@ export const addStockToWatchlist = async (ticker_symbol, company_name, exchange)
   return data;
 };
 
-// --- MODULE 2: STOCK SEARCH & MARKET DATA API ---
+// ==========================================
+// MODULE 2: STOCK SEARCH & MARKET DATA APIS
+// ==========================================
+
+export const searchStocksAutocomplete = async (query, market = "NSE") => {
+  const params = new URLSearchParams({ q: query, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/search?${params.toString()}`);
+  if (!res.ok) return [];
+  return res.json();
+};
+
+export const fetchStockProfile = async (ticker, market = "NSE") => {
+  const params = new URLSearchParams({ market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/profile?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch company profile");
+  return data;
+};
+
+export const fetchStockHistory = async (ticker, period = "6mo", market = "NSE") => {
+  const params = new URLSearchParams({ period, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/history?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch price history");
+  return data;
+};
+
+export const fetchStockFinancials = async (ticker, frequency = "annual", market = "NSE") => {
+  const params = new URLSearchParams({ frequency, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/financials?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch financial statements");
+  return data;
+};
+
+export const fetchStockValidation = async (ticker, period = "6mo", market = "NSE") => {
+  const params = new URLSearchParams({ period, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/validate?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch validation summary");
+  return data;
+};
 
 export const searchStockData = async (query, market, period) => {
   const params = new URLSearchParams({ query, market, period });

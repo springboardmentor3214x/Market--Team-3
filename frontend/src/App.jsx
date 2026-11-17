@@ -12,32 +12,30 @@ import { ChevronDown } from "lucide-react";
 import "./App.css";
 
 function App() {
-  // --- Auth State (Module 1) ---
+  // --- Auth State ---
+  const alreadyLoggedIn = !!localStorage.getItem("jwt_token");
   const [token, setToken] = useState(localStorage.getItem("jwt_token") || "");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authMessage, setAuthMessage] = useState({ type: "", text: "" });
+  const [userEmail, setUserEmail] = useState(localStorage.getItem("user_email") || "");
 
   // --- Transition State ---
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [loginHidden, setLoginHidden] = useState(!!localStorage.getItem("jwt_token"));
+  const [loginHidden, setLoginHidden] = useState(alreadyLoggedIn);
   const workspaceRef = useRef(null);
 
-  // --- Workspace State (Module 1) ---
-  const [userEmail, setUserEmail] = useState(localStorage.getItem("user_email") || "");
+  // --- Workspace State ---
   const [market, setMarket] = useState("NSE");
   const [period, setPeriod] = useState("6mo");
   const [watchlist, setWatchlist] = useState([]);
   const [history, setHistory] = useState([]);
 
-  // --- Market Data State (Module 2) ---
+  // --- Market Data State ---
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [stockResult, setStockResult] = useState(null);
   const [searchError, setSearchError] = useState("");
   const [activeStatement, setActiveStatement] = useState("income_statement");
 
-  // Load workspace data when user logs in
+  // Load workspace data
   const loadUserWorkspace = async () => {
     try {
       const data = await fetchWorkspace();
@@ -53,9 +51,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (token) {
-      loadUserWorkspace();
-    }
+    if (token) loadUserWorkspace();
   }, [token]);
 
   // --- Smooth Scroll Transition Handler ---
@@ -66,7 +62,7 @@ function App() {
     setToken(jwtToken);
     setIsTransitioning(true);
 
-    // Allow workspace to render, then smooth-scroll to it
+    // Wait for workspace to render, then scroll
     requestAnimationFrame(() => {
       setTimeout(() => {
         if (workspaceRef.current) {
@@ -75,12 +71,14 @@ function App() {
             block: "start",
           });
         }
-
-        // After scroll animation completes, hide the login section
+        // After scroll completes, hide login and snap to top
         setTimeout(() => {
           setLoginHidden(true);
           setIsTransitioning(false);
-          window.scrollTo({ top: 0, behavior: "instant" });
+          // Use rAF to ensure DOM has updated before scrolling
+          requestAnimationFrame(() => {
+            window.scrollTo(0, 0);
+          });
         }, 1400);
       }, 200);
     });
@@ -93,10 +91,9 @@ function App() {
     setUserEmail("");
     setStockResult(null);
     setLoginHidden(false);
-    window.scrollTo({ top: 0, behavior: "instant" });
+    window.scrollTo(0, 0);
   };
 
-  // --- Module 1: Save User Preferences ---
   const handlePreferenceSave = async () => {
     try {
       await savePreferences(market, period);
@@ -106,17 +103,17 @@ function App() {
     }
   };
 
-  // --- Module 2: Search Stock & Collect Validated Data ---
-  const handleStockSearch = async (e, customQuery = null, customMarket = null) => {
+  const handleStockSearch = async (e, customQuery = null, customMarket = null, customPeriod = null) => {
     if (e) e.preventDefault();
     const q = customQuery || searchQuery;
     const m = customMarket || market;
+    const p = customPeriod || period;
     if (!q.trim()) return;
 
     setLoading(true);
     setSearchError("");
     try {
-      const result = await searchStockData(q, m, period);
+      const result = await searchStockData(q, m, p);
       setStockResult(result);
       loadUserWorkspace();
     } catch (err) {
@@ -127,7 +124,6 @@ function App() {
     }
   };
 
-  // --- Module 1: Add Current Stock to Watchlist ---
   const handleAddToWatchlist = async () => {
     if (!stockResult) return;
     try {
@@ -141,47 +137,19 @@ function App() {
   };
 
   // ==========================================
-  // If already authenticated (page reload / returning user),
-  // show only the workspace directly
-  // ==========================================
-  if (loginHidden && token) {
-    return (
-      <Workspace
-        userEmail={userEmail}
-        onLogout={handleLogout}
-        market={market}
-        setMarket={setMarket}
-        period={period}
-        setPeriod={setPeriod}
-        onPreferenceSave={handlePreferenceSave}
-        watchlist={watchlist}
-        history={history}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onStockSearch={handleStockSearch}
-        loading={loading}
-        stockResult={stockResult}
-        searchError={searchError}
-        onAddToWatchlist={handleAddToWatchlist}
-        activeStatement={activeStatement}
-        setActiveStatement={setActiveStatement}
-      />
-    );
-  }
-
-  // ==========================================
-  // CINEMATIC SCROLL-DOWN TRANSITION LAYOUT
-  // Both Login + Workspace stacked vertically;
-  // After auth success, page scrolls down into workspace.
+  // SINGLE RENDER PATH — no component remounting
+  // Login is hidden via CSS when loginHidden=true
   // ==========================================
   return (
     <div className="app-scroll-container">
-      {/* ===== SECTION 1: LOGIN (100vh) ===== */}
-      <section className="app-scroll-section">
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
-      </section>
+      {/* ===== SECTION 1: LOGIN (hidden after transition) ===== */}
+      {!loginHidden && (
+        <section className="app-scroll-section">
+          <LoginPage onLoginSuccess={handleLoginSuccess} />
+        </section>
+      )}
 
-      {/* ===== TRANSITION BANNER (shows during scroll) ===== */}
+      {/* ===== TRANSITION BANNER ===== */}
       <AnimatePresence>
         {isTransitioning && (
           <motion.div
@@ -198,35 +166,29 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* ===== SECTION 2: WORKSPACE (rendered when token exists) ===== */}
+      {/* ===== SECTION 2: WORKSPACE ===== */}
       {token && (
         <section ref={workspaceRef} className="app-scroll-section">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            <Workspace
-              userEmail={userEmail}
-              onLogout={handleLogout}
-              market={market}
-              setMarket={setMarket}
-              period={period}
-              setPeriod={setPeriod}
-              onPreferenceSave={handlePreferenceSave}
-              watchlist={watchlist}
-              history={history}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onStockSearch={handleStockSearch}
-              loading={loading}
-              stockResult={stockResult}
-              searchError={searchError}
-              onAddToWatchlist={handleAddToWatchlist}
-              activeStatement={activeStatement}
-              setActiveStatement={setActiveStatement}
-            />
-          </motion.div>
+          <Workspace
+            userEmail={userEmail}
+            onLogout={handleLogout}
+            market={market}
+            setMarket={setMarket}
+            period={period}
+            setPeriod={setPeriod}
+            onPreferenceSave={handlePreferenceSave}
+            watchlist={watchlist}
+            history={history}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onStockSearch={handleStockSearch}
+            loading={loading}
+            stockResult={stockResult}
+            searchError={searchError}
+            onAddToWatchlist={handleAddToWatchlist}
+            activeStatement={activeStatement}
+            setActiveStatement={setActiveStatement}
+          />
         </section>
       )}
     </div>

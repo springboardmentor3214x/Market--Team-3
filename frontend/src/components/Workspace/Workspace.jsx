@@ -1,23 +1,22 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import WorkspaceScene3D from "./WorkspaceScene3D";
+import StockSearchBar from "./StockSearchBar";
+import StockPriceChart from "./StockPriceChart";
+import FinancialStatementsView from "./FinancialStatementsView";
 import {
   TrendingUp,
   Cpu,
   Bookmark,
   History,
-  Search,
   Globe,
-  Calendar,
   LogOut,
-  Layers,
   ShieldCheck,
   CheckCircle,
-  AlertCircle,
   BarChart2,
-  Database,
   ExternalLink,
   Zap,
+  Info,
 } from "lucide-react";
 import "./Workspace.css";
 
@@ -38,30 +37,30 @@ export default function Workspace({
   stockResult,
   searchError,
   onAddToWatchlist,
-  activeStatement,
-  setActiveStatement,
 }) {
-  const [copiedTicker, setCopiedTicker] = useState(null);
+  const handlePeriodChange = (newPeriod) => {
+    setPeriod(newPeriod);
+    if (stockResult?.source_metadata?.ticker) {
+      onStockSearch(null, stockResult.source_metadata.ticker, stockResult.source_metadata.exchange, newPeriod);
+    }
+  };
 
-  // Quick suggestions for fast research
-  const quickSuggestions = [
-    { ticker: "INFY", label: "Infosys (NSE)" },
-    { ticker: "RELIANCE.NS", label: "Reliance (NSE)" },
-    { ticker: "TCS.NS", label: "TCS (NSE)" },
-    { ticker: "AAPL", label: "Apple (NASDAQ)" },
-    { ticker: "NVDA", label: "NVIDIA (NASDAQ)" },
-    { ticker: "TSLA", label: "Tesla (NASDAQ)" },
-  ];
-
-  const statementObj =
-    stockResult?.financial_statements?.[activeStatement]?.statement || {};
-  const statementDates = Object.keys(statementObj);
-  const statementMetrics =
-    statementDates.length > 0 ? Object.keys(statementObj[statementDates[0]] || {}) : [];
-
-  const handleQuickFill = (ticker) => {
-    setSearchQuery(ticker);
-    onStockSearch(null, ticker);
+  const formatMarketCap = (marketCap, currency) => {
+    if (!marketCap) return "Not Available";
+    const num = Number(marketCap);
+    if (currency === "INR") {
+      // Format in Crores (1 Crore = 10,000,000)
+      const crores = num / 1e7;
+      return `₹ ${crores.toLocaleString(undefined, { maximumFractionDigits: 2 })} Cr`;
+    }
+    // US / Global: Billions / Trillions
+    if (num >= 1e12) {
+      return `$ ${(num / 1e12).toFixed(2)} T`;
+    }
+    if (num >= 1e9) {
+      return `$ ${(num / 1e9).toFixed(2)} B`;
+    }
+    return `$ ${(num / 1e6).toFixed(2)} M`;
   };
 
   return (
@@ -93,7 +92,7 @@ export default function Workspace({
             <div className="ws-brand-text">
               <span className="ws-brand-title">MARKET INTELLIGENCE AI</span>
               <span className="ws-brand-subtitle">
-                MULTI-AGENT RESEARCH ENGINE
+                MULTI-AGENT RESEARCH ENGINE • MODULE 2
               </span>
             </div>
             <div className="ws-status-badge">
@@ -143,7 +142,7 @@ export default function Workspace({
               </div>
 
               <div className="ws-form-group">
-                <label className="ws-form-label">Preferred Market</label>
+                <label className="ws-form-label">Default Target Market</label>
                 <select
                   className="ws-select"
                   value={market}
@@ -165,7 +164,7 @@ export default function Workspace({
                 >
                   <option value="1mo">1 Month</option>
                   <option value="3mo">3 Months</option>
-                  <option value="6mo">6 Months (Recommended)</option>
+                  <option value="6mo">6 Months</option>
                   <option value="1y">1 Year</option>
                   <option value="5y">5 Years</option>
                 </select>
@@ -262,7 +261,7 @@ export default function Workspace({
           </motion.aside>
 
           {/* =================================================================
-              RIGHT MAIN AREA: MODULE 2 (Stock Search, OHLCV, Validation, Financials)
+              RIGHT MAIN AREA: MODULE 2 (Stock Search, Recharts, Validation, Financials)
               ================================================================= */}
           <motion.div
             className="workspace-body"
@@ -270,78 +269,16 @@ export default function Workspace({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
           >
-            {/* 1. Publicly Traded Company Search Card */}
-            <div className="ws-glass-card">
-              <div className="ws-card-header">
-                <div className="ws-card-title">
-                  <Search size={16} className="ws-card-title-icon" />
-                  <span>Search Publicly Traded Company</span>
-                </div>
-                <span className="ws-count-badge">Module 2: Market Engine</span>
-              </div>
-
-              <form className="ws-search-form" onSubmit={onStockSearch}>
-                <div className="ws-search-input-wrapper">
-                  <Search size={18} className="ws-search-icon" />
-                  <input
-                    type="text"
-                    className="ws-search-input"
-                    placeholder="Enter Company Name or Ticker (e.g. INFY, Reliance, TCS, AAPL, NVDA)..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <motion.button
-                  type="submit"
-                  className="ws-btn-primary ws-search-submit-btn"
-                  disabled={loading}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {loading ? (
-                    <>
-                      <div className="ws-spinner-dot" />
-                      <span>Collecting Data...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={16} />
-                      <span>Search & Collect Data</span>
-                    </>
-                  )}
-                </motion.button>
-              </form>
-
-              {/* Quick suggestion pills */}
-              <div className="ws-suggestions-row">
-                <span className="ws-suggestion-label">Quick Alpha:</span>
-                {quickSuggestions.map((item) => (
-                  <button
-                    key={item.ticker}
-                    type="button"
-                    className="ws-suggestion-pill"
-                    onClick={() => handleQuickFill(item.ticker)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Error Banner */}
-              <AnimatePresence>
-                {searchError && (
-                  <motion.div
-                    className="ws-alert-error"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <AlertCircle size={18} />
-                    <span>{searchError}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* 1. Publicly Traded Company Search with Autocomplete (Requirement 3) */}
+            <StockSearchBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onSearch={onStockSearch}
+              loading={loading}
+              market={market}
+              setMarket={setMarket}
+              searchError={searchError}
+            />
 
             {/* 2. Stock Result Sections */}
             <AnimatePresence>
@@ -352,7 +289,7 @@ export default function Workspace({
                   exit={{ opacity: 0, y: 30 }}
                   transition={{ duration: 0.6 }}
                 >
-                  {/* Company Profile Header Card */}
+                  {/* Company Profile Header Card (Requirement 6 & 9) */}
                   <div className="ws-glass-card">
                     <div className="ws-company-header">
                       <div className="ws-company-title-area">
@@ -365,11 +302,11 @@ export default function Workspace({
                         <p className="ws-company-sector">
                           Sector:{" "}
                           <strong style={{ color: "var(--ws-text-primary)" }}>
-                            {stockResult.company_profile.sector}
+                            {stockResult.company_profile.sector || "Not Available"}
                           </strong>{" "}
                           | Industry:{" "}
                           <strong style={{ color: "var(--ws-text-primary)" }}>
-                            {stockResult.company_profile.industry}
+                            {stockResult.company_profile.industry || "Not Available"}
                           </strong>
                         </p>
                       </div>
@@ -385,7 +322,7 @@ export default function Workspace({
                       </motion.button>
                     </div>
 
-                    {/* Metadata Badges */}
+                    {/* Key Corporate Metrics Badges (Requirement 6) */}
                     <div className="ws-badge-row">
                       <span className="ws-badge">
                         Exchange: <strong>{stockResult.source_metadata.exchange}</strong>
@@ -394,38 +331,83 @@ export default function Workspace({
                         Currency: <strong>{stockResult.source_metadata.currency}</strong>
                       </span>
                       <span className="ws-badge">
-                        Source: <strong>{stockResult.source_metadata.data_source}</strong>
-                      </span>
-                      <span className="ws-badge">
-                        Retrieved At:{" "}
-                        <strong>
-                          {new Date(
-                            stockResult.source_metadata.retrieved_at
-                          ).toLocaleString()}
+                        Market Cap:{" "}
+                        <strong style={{ color: "var(--ws-accent-green)" }}>
+                          {formatMarketCap(
+                            stockResult.company_profile.market_cap,
+                            stockResult.source_metadata.currency
+                          )}
                         </strong>
                       </span>
+                      {stockResult.company_profile.website && stockResult.company_profile.website !== "Not Available" && (
+                        <a
+                          href={stockResult.company_profile.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="ws-badge ws-website-link"
+                        >
+                          Website: <strong>{stockResult.company_profile.website.replace(/^https?:\/\//, "")}</strong>
+                          <ExternalLink size={12} style={{ marginLeft: 4 }} />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Data Source & Timestamp Tracking (Requirement 9) */}
+                    <div className="ws-tracking-pill">
+                      <div className="ws-live-pulse" />
+                      <span>Data Provider: <strong>{stockResult.source_metadata.data_source}</strong></span>
+                      <span className="ws-tracking-divider">•</span>
+                      <span>UTC Retrieved: <strong>{new Date(stockResult.source_metadata.retrieved_at).toUTCString()}</strong></span>
+                      {stockResult.source_metadata.source_url && (
+                        <>
+                          <span className="ws-tracking-divider">•</span>
+                          <a
+                            href={stockResult.source_metadata.source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ws-source-link"
+                          >
+                            Source Link <ExternalLink size={11} />
+                          </a>
+                        </>
+                      )}
                     </div>
 
                     {stockResult.company_profile.description && (
                       <p className="ws-company-desc">
-                        {stockResult.company_profile.description.slice(0, 480)}...
+                        {stockResult.company_profile.description.slice(0, 520)}...
                       </p>
                     )}
                   </div>
 
-                  {/* Data Validation & Quality Summary Card */}
+                  {/* 3. Interactive Recharts Price & Volume Chart (Requirement 1 & 4) */}
+                  <StockPriceChart
+                    ohlcvData={stockResult.ohlcv_data}
+                    currency={stockResult.source_metadata.currency}
+                    activePeriod={period}
+                    onPeriodChange={handlePeriodChange}
+                    loading={loading}
+                  />
+
+                  {/* 4. Data Validation & Quality Summary Card (Requirement 8) */}
                   <div className="ws-glass-card">
                     <div className="ws-card-header">
                       <div className="ws-card-title">
                         <ShieldCheck size={16} className="ws-card-title-icon" />
-                        <span>Data Quality & Validation Summary</span>
+                        <span>Data Quality & Validation Audit (Requirement 8)</span>
                       </div>
-                      <span className="ws-count-badge">Requirement 6</span>
+                      <span
+                        className={`ws-count-badge ${
+                          stockResult.validation_summary.status === "PASS" ? "status-pass" : ""
+                        }`}
+                      >
+                        Status: {stockResult.validation_summary.status}
+                      </span>
                     </div>
 
                     <div className="ws-stats-grid">
                       <div className="ws-stat-card">
-                        <span className="ws-stat-label">Initial Records</span>
+                        <span className="ws-stat-label">Initial Downloaded</span>
                         <span className="ws-stat-val">
                           {stockResult.validation_summary.initial_records}
                         </span>
@@ -439,21 +421,29 @@ export default function Workspace({
                       </div>
 
                       <div className="ws-stat-card">
-                        <span className="ws-stat-label">Duplicates Removed</span>
+                        <span className="ws-stat-label">Duplicate Dates Filtered</span>
                         <span className="ws-stat-val">
                           {stockResult.validation_summary.duplicates_removed}
                         </span>
                       </div>
 
                       <div className="ws-stat-card">
-                        <span className="ws-stat-label">Missing Values Handled</span>
+                        <span className="ws-stat-label">Invalid Dates Dropped</span>
                         <span className="ws-stat-val">
-                          {stockResult.validation_summary.missing_values_filled}
+                          {stockResult.validation_summary.invalid_dates_dropped || 0}
                         </span>
                       </div>
 
                       <div className="ws-stat-card">
-                        <span className="ws-stat-label">Inconsistent Dropped</span>
+                        <span className="ws-stat-label">Missing Values Detected</span>
+                        <span className="ws-stat-val">
+                          {stockResult.validation_summary.missing_values_detected ||
+                           stockResult.validation_summary.missing_values_filled || 0}
+                        </span>
+                      </div>
+
+                      <div className="ws-stat-card">
+                        <span className="ws-stat-label">Inconsistent Prices Dropped</span>
                         <span className="ws-stat-val">
                           {stockResult.validation_summary.inconsistent_rows_dropped}
                         </span>
@@ -461,17 +451,18 @@ export default function Workspace({
                     </div>
                   </div>
 
-                  {/* Historical OHLCV Table Card */}
+                  {/* 5. Historical OHLCV Data Table (Requirement 5) */}
                   <div className="ws-glass-card">
                     <div className="ws-card-header">
                       <div className="ws-card-title">
                         <BarChart2 size={16} className="ws-card-title-icon" />
                         <span>
-                          Historical OHLCV Prices (
-                          {stockResult.source_metadata.currency})
+                          Structured OHLCV Historical Prices ({stockResult.source_metadata.currency})
                         </span>
                       </div>
-                      <span className="ws-count-badge">Last 30 Sessions</span>
+                      <span className="ws-count-badge">
+                        {stockResult.ohlcv_data.length} Trading Days
+                      </span>
                     </div>
 
                     <div className="ws-table-container">
@@ -483,6 +474,7 @@ export default function Workspace({
                             <th>High</th>
                             <th>Low</th>
                             <th>Close</th>
+                            <th>Adj Close</th>
                             <th>Volume</th>
                           </tr>
                         </thead>
@@ -500,6 +492,7 @@ export default function Workspace({
                                 <td className="highlight-price">
                                   {Number(row.Close).toFixed(2)}
                                 </td>
+                                <td>{row["Adj Close"] ? Number(row["Adj Close"]).toFixed(2) : "-"}</td>
                                 <td>{Number(row.Volume).toLocaleString()}</td>
                               </tr>
                             ))}
@@ -508,81 +501,12 @@ export default function Workspace({
                     </div>
                   </div>
 
-                  {/* Financial Statements Card */}
-                  <div className="ws-glass-card">
-                    <div className="ws-card-header">
-                      <div className="ws-card-title">
-                        <Database size={16} className="ws-card-title-icon" />
-                        <span>Corporate Financial Statements</span>
-                      </div>
-                      <span className="ws-count-badge">Requirement 4</span>
-                    </div>
-
-                    <div className="ws-tabs-bar">
-                      <button
-                        type="button"
-                        className={`ws-tab-btn ${
-                          activeStatement === "income_statement" ? "active" : ""
-                        }`}
-                        onClick={() => setActiveStatement("income_statement")}
-                      >
-                        Income Statement
-                      </button>
-                      <button
-                        type="button"
-                        className={`ws-tab-btn ${
-                          activeStatement === "balance_sheet" ? "active" : ""
-                        }`}
-                        onClick={() => setActiveStatement("balance_sheet")}
-                      >
-                        Balance Sheet
-                      </button>
-                      <button
-                        type="button"
-                        className={`ws-tab-btn ${
-                          activeStatement === "cash_flow" ? "active" : ""
-                        }`}
-                        onClick={() => setActiveStatement("cash_flow")}
-                      >
-                        Cash Flow
-                      </button>
-                    </div>
-
-                    {statementDates.length === 0 ? (
-                      <div className="ws-empty-text">
-                        <p>Financial statement data not available for this company.</p>
-                      </div>
-                    ) : (
-                      <div className="ws-table-container">
-                        <table className="ws-table">
-                          <thead>
-                            <tr>
-                              <th>Metric</th>
-                              {statementDates.map((d) => (
-                                <th key={d}>{d}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {statementMetrics.slice(0, 16).map((metric) => (
-                              <tr key={metric}>
-                                <td style={{ color: "var(--ws-text-secondary)" }}>
-                                  {metric}
-                                </td>
-                                {statementDates.map((d) => (
-                                  <td key={d}>
-                                    {Number(
-                                      statementObj[d][metric] || 0
-                                    ).toLocaleString()}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
+                  {/* 6. Corporate Financial Statements (Annual & Quarterly) (Requirement 7) */}
+                  <FinancialStatementsView
+                    financialStatements={stockResult.financial_statements}
+                    ticker={stockResult.source_metadata.ticker}
+                    currency={stockResult.source_metadata.currency}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

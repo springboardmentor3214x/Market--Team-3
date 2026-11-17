@@ -781,6 +781,335 @@
   to { transform: rotate(360deg); }
 }
 
+/* ==========================================================================
+   MODULE 2 ENHANCEMENTS: SEARCH AUTOCOMPLETE, RECHARTS, METRICS & STATEMENTS
+   ========================================================================== */
+
+/* Search Clear Button */
+.ws-search-clear-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--ws-text-secondary);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ws-search-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Autocomplete Dropdown */
+.ws-autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: rgba(10, 18, 28, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--ws-border-glass);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 255, 135, 0.15);
+  z-index: 100;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.ws-dropdown-header {
+  padding: 8px 14px;
+  font-size: 11px;
+  font-family: var(--ws-font-mono);
+  color: var(--ws-text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--ws-border-glass-subtle);
+}
+
+.ws-autocomplete-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: all 0.18s ease;
+}
+
+.ws-autocomplete-item:hover {
+  background: rgba(0, 255, 135, 0.08);
+  padding-left: 18px;
+}
+
+.ws-auto-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ws-auto-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ws-text-primary);
+}
+
+.ws-auto-exchange {
+  font-size: 11px;
+  color: var(--ws-text-muted);
+  font-family: var(--ws-font-mono);
+}
+
+.ws-auto-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-auto-ticker {
+  font-family: var(--ws-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ws-accent-green);
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(0, 255, 135, 0.08);
+  border: 1px solid rgba(0, 255, 135, 0.2);
+}
+
+/* Market Selector Tabs in Search Card */
+.ws-market-pill-selector {
+  display: flex;
+  gap: 6px;
+}
+
+.ws-market-tab {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ws-border-glass-subtle);
+  color: var(--ws-text-secondary);
+  font-size: 11px;
+  font-family: var(--ws-font-mono);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ws-market-tab.active {
+  background: rgba(0, 255, 135, 0.12);
+  border-color: var(--ws-accent-green);
+  color: var(--ws-accent-green);
+  box-shadow: 0 0 10px rgba(0, 255, 135, 0.2);
+}
+
+/* Recharts Stock Price Card */
+.ws-chart-card {
+  background: var(--ws-bg-card);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--ws-border-glass);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 255, 135, 0.04);
+}
+
+.ws-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ws-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ws-text-primary);
+}
+
+.ws-period-btn-group {
+  display: flex;
+  gap: 6px;
+  background: rgba(5, 8, 14, 0.6);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--ws-border-glass-subtle);
+}
+
+.ws-period-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--ws-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--ws-font-mono);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ws-period-btn:hover {
+  color: var(--ws-text-primary);
+}
+
+.ws-period-btn.active {
+  background: var(--ws-accent-green);
+  color: #05080e;
+  box-shadow: 0 0 12px rgba(0, 255, 135, 0.4);
+}
+
+.ws-chart-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.ws-chart-caption {
+  font-size: 11px;
+  color: var(--ws-text-muted);
+  font-family: var(--ws-font-mono);
+}
+
+/* Recharts Custom Tooltip */
+.ws-chart-tooltip {
+  background: rgba(10, 18, 28, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--ws-border-glass);
+  padding: 12px 16px;
+  border-radius: 9px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 255, 135, 0.15);
+  font-family: var(--ws-font-mono);
+}
+
+.ws-tooltip-date {
+  font-size: 12px;
+  color: var(--ws-text-muted);
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 4px;
+}
+
+.ws-tooltip-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.ws-tooltip-grid > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tooltip-label {
+  color: var(--ws-text-secondary);
+}
+
+.tooltip-volume-row {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+/* Frequency Toggle for Financial Statements */
+.ws-freq-toggle-group {
+  display: flex;
+  gap: 6px;
+  background: rgba(5, 8, 14, 0.6);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--ws-border-glass-subtle);
+}
+
+.ws-freq-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--ws-text-secondary);
+  font-size: 11px;
+  font-family: var(--ws-font-mono);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ws-freq-btn.active {
+  background: rgba(0, 255, 135, 0.15);
+  border: 1px solid var(--ws-border-glass);
+  color: var(--ws-accent-green);
+}
+
+/* Website Badge Link */
+.ws-website-link {
+  color: var(--ws-accent-cyan) !important;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ws-website-link:hover {
+  border-color: var(--ws-accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+/* Data Source & Timestamp Tracking Pill (Requirement 9) */
+.ws-tracking-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  background: rgba(0, 255, 135, 0.04);
+  border: 1px solid var(--ws-border-glass-subtle);
+  font-size: 12px;
+  color: var(--ws-text-secondary);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.ws-tracking-divider {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.ws-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ws-accent-green);
+  text-decoration: none;
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+}
+
+.ws-source-link:hover {
+  text-decoration: underline;
+}
+
+.status-pass {
+  background: rgba(0, 255, 135, 0.15) !important;
+  color: var(--ws-accent-green) !important;
+  border-color: rgba(0, 255, 135, 0.4) !important;
+  font-weight: 700;
+}
+
 /* Responsive Media Queries */
 @media (max-width: 1180px) {
   .workspace-main {

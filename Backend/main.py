@@ -137,6 +137,75 @@ def add_to_watchlist(
 # MODULE 2: STOCK SEARCH & MARKET DATA APIS
 # ==========================================
 
+@app.get("/api/stocks/search", tags=["Module 2: Market Data"])
+def autocomplete_stock_search(
+    q: str = Query("", description="Search term for company name or ticker"),
+    market: str = Query("NSE", description="Target market: NSE, BSE, NYSE, NASDAQ"),
+):
+    """
+    Requirement 3: Search input with autocomplete suggestions.
+    Supports NSE, BSE, NYSE, and NASDAQ stocks.
+    """
+    return market_service.search_stocks(query=q, market=market)
+
+
+@app.get("/api/stocks/{ticker}/profile", tags=["Module 2: Market Data"])
+def get_stock_profile(
+    ticker: str,
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+):
+    """
+    Requirement 6: Company Profile.
+    Returns sector, industry, market cap, website, exchange, currency, and business description.
+    """
+    return market_service.get_company_profile(query=ticker, market=market)
+
+
+@app.get("/api/stocks/{ticker}/history", tags=["Module 2: Market Data"])
+def get_stock_history(
+    ticker: str,
+    period: str = Query("6mo", description="Historical period: 1mo, 3mo, 6mo, 1y, 5y"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+):
+    """
+    Requirement 4 & 5: Historical stock price retrieval and OHLCV data.
+    Returns validated Open, High, Low, Close, Adj Close, and Volume.
+    """
+    return market_service.get_historical_ohlcv_data(query=ticker, period=period, market=market)
+
+
+@app.get("/api/stocks/{ticker}/financials", tags=["Module 2: Market Data"])
+def get_stock_financials(
+    ticker: str,
+    frequency: str = Query("annual", description="Statement frequency: annual or quarterly"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+):
+    """
+    Requirement 7: Financial Statements.
+    Returns Income Statement, Balance Sheet, and Cash Flow (annual & quarterly).
+    """
+    return market_service.get_financial_statements(query=ticker, frequency=frequency, market=market)
+
+
+@app.get("/api/stocks/{ticker}/validate", tags=["Module 2: Market Data"])
+def validate_stock_dataset(
+    ticker: str,
+    period: str = Query("6mo", description="Period to audit: 1mo, 3mo, 6mo, 1y, 5y"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+):
+    """
+    Requirement 8: Data Validation.
+    Executes Pandas & NumPy checks (duplicates, nulls, price boundary logic, volume bounds).
+    """
+    history_data = market_service.get_historical_ohlcv_data(query=ticker, period=period, market=market)
+    return {
+        "ticker": ticker,
+        "period": period,
+        "validation_report": history_data["validation_summary"],
+        "records_audited": len(history_data["records"]),
+    }
+
+
 @app.get("/api/market/search", tags=["Module 2: Market Data"])
 def search_and_collect_stock_data(
     query: str = Query(..., description="Company Name or Ticker (e.g., Infosys, INFY, Reliance, AAPL)"),
@@ -146,10 +215,17 @@ def search_and_collect_stock_data(
     db: Session = Depends(database.get_db)
 ):
     """
+    Unified Pipeline:
     Searches the stock, validates OHLCV & Financials (Module 2),
-    and automatically logs the search in the user's Research History (Module 1).
+    persists records, and automatically logs the search in the user's Research History (Module 1).
     """
-    stock_data = market_service.fetch_complete_stock_data(query=query, market=market, period=period)
+    stock_data = market_service.fetch_and_persist_stock_data(
+        query=query,
+        market=market,
+        period=period,
+        user_id=current_user.user_id,
+        db=db,
+    )
 
     # Save search automatically to User's Research History
     meta = stock_data["source_metadata"]
