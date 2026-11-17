@@ -4,6 +4,9 @@ import WorkspaceScene3D from "./WorkspaceScene3D";
 import StockSearchBar from "./StockSearchBar";
 import StockPriceChart from "./StockPriceChart";
 import FinancialStatementsView from "./FinancialStatementsView";
+import AIAgentCards from "./AIAgentCards";
+import AnimatedCounter from "./AnimatedCounter";
+import TiltCard from "./TiltCard";
 import {
   TrendingUp,
   Cpu,
@@ -280,6 +283,17 @@ export default function Workspace({
               searchError={searchError}
             />
 
+            {/* AI Agent Swarm Architecture (Requirement 5) */}
+            {!stockResult && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+              >
+                <AIAgentCards />
+              </motion.div>
+            )}
+
             {/* 2. Stock Result Sections */}
             <AnimatePresence>
               {stockResult && (
@@ -402,6 +416,9 @@ export default function Workspace({
                     />
                   </motion.div>
 
+                  {/* Multi-Agent Swarm Section (Requirement 5) */}
+                  <AIAgentCards />
+
                   {/* 4. Data Validation & Quality Summary Card (Requirement 8) */}
                   <motion.div
                     className="ws-glass-card"
@@ -428,43 +445,48 @@ export default function Workspace({
                       <div className="ws-stat-card">
                         <span className="ws-stat-label">Initial Downloaded</span>
                         <span className="ws-stat-val">
-                          {stockResult.validation_summary.initial_records}
+                          <AnimatedCounter value={stockResult.validation_summary.initial_records} />
                         </span>
                       </div>
 
                       <div className="ws-stat-card">
                         <span className="ws-stat-label">Valid OHLCV Records</span>
                         <span className="ws-stat-val positive">
-                          {stockResult.validation_summary.valid_records_returned}
+                          <AnimatedCounter value={stockResult.validation_summary.valid_records_returned} />
                         </span>
                       </div>
 
                       <div className="ws-stat-card">
                         <span className="ws-stat-label">Duplicate Dates Filtered</span>
                         <span className="ws-stat-val">
-                          {stockResult.validation_summary.duplicates_removed}
+                          <AnimatedCounter value={stockResult.validation_summary.duplicates_removed} />
                         </span>
                       </div>
 
                       <div className="ws-stat-card">
                         <span className="ws-stat-label">Invalid Dates Dropped</span>
                         <span className="ws-stat-val">
-                          {stockResult.validation_summary.invalid_dates_dropped || 0}
+                          <AnimatedCounter value={stockResult.validation_summary.invalid_dates_dropped || 0} />
                         </span>
                       </div>
 
                       <div className="ws-stat-card">
                         <span className="ws-stat-label">Missing Values Detected</span>
                         <span className="ws-stat-val">
-                          {stockResult.validation_summary.missing_values_detected ||
-                           stockResult.validation_summary.missing_values_filled || 0}
+                          <AnimatedCounter
+                            value={
+                              stockResult.validation_summary.missing_values_detected ||
+                              stockResult.validation_summary.missing_values_filled ||
+                              0
+                            }
+                          />
                         </span>
                       </div>
 
                       <div className="ws-stat-card">
                         <span className="ws-stat-label">Inconsistent Prices Dropped</span>
                         <span className="ws-stat-val">
-                          {stockResult.validation_summary.inconsistent_rows_dropped}
+                          <AnimatedCounter value={stockResult.validation_summary.inconsistent_rows_dropped} />
                         </span>
                       </div>
                     </div>
@@ -486,7 +508,7 @@ export default function Workspace({
                         </span>
                       </div>
                       <span className="ws-count-badge">
-                        {stockResult.ohlcv_data.length} Trading Days
+                        <AnimatedCounter value={stockResult.ohlcv_data.length} /> Trading Days
                       </span>
                     </div>
 

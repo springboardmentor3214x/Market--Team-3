@@ -1111,6 +1111,160 @@
   font-weight: 700;
 }
 
+/* ==========================================================================
+   3D TILT CARDS & SPOTLIGHT
+   ========================================================================== */
+.ws-tilt-card {
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.ws-card-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.3s ease;
+}
+
+/* ==========================================================================
+   AI AGENTS ARCHITECTURE CARDS (SECTION 5)
+   ========================================================================== */
+.ws-agents-section {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.ws-agents-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.ws-agent-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 200px;
+  background: rgba(10, 18, 28, 0.75);
+  border: 1px solid var(--ws-border-glass-subtle);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ws-agent-card:hover {
+  border-color: var(--ws-border-glass);
+  box-shadow: 0 10px 30px -10px rgba(0, 255, 135, 0.15);
+}
+
+.ws-agent-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ws-agent-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 255, 135, 0.25);
+}
+
+.ws-agent-pulse-icon {
+  animation: agent-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes agent-pulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(0, 255, 135, 0.4)); }
+  100% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(0, 255, 135, 0.8)); }
+}
+
+.ws-agent-tag {
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 255, 135, 0.08);
+  border: 1px solid rgba(0, 255, 135, 0.2);
+  color: var(--ws-accent-green);
+}
+
+.ws-agent-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ws-text-primary);
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+.ws-agent-role {
+  font-size: 11px;
+  font-family: var(--ws-font-mono);
+  color: var(--ws-accent-cyan);
+  margin-bottom: 8px;
+}
+
+.ws-agent-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ws-text-secondary);
+  margin-bottom: 16px;
+  flex-grow: 1;
+}
+
+.ws-agent-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+}
+
+.ws-agent-status-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ws-agent-idle-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+}
+
+.ws-agent-status-text {
+  font-family: var(--ws-font-mono);
+  font-weight: 600;
+  color: #38bdf8;
+  letter-spacing: 0.03em;
+}
+
+.ws-agent-detail {
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  color: var(--ws-text-muted);
+}
+
+@media (max-width: 768px) {
+  .ws-agents-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Responsive Media Queries */
 @media (max-width: 1180px) {
   .workspace-main {

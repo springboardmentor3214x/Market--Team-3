@@ -120,6 +120,7 @@ export default function LoginPage({ onLoginSuccess }) {
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
         onRegisterSuccess={handleRegisterSuccess}
+        onLoginSuccess={onLoginSuccess}
       />
 
       {/* Forgot Password Recovery Modal */}

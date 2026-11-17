@@ -112,7 +112,7 @@ export default function StockPriceChart({
 
       {/* Main Chart Container */}
       <div className="ws-chart-wrapper" style={{ width: "100%", height: 320 }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer key={activePeriod} width="100%" height="100%">
           <ComposedChart
             data={ohlcvData}
             margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
@@ -158,6 +158,9 @@ export default function StockPriceChart({
               dataKey="Volume"
               fill="rgba(0, 229, 255, 0.22)"
               radius={[2, 2, 0, 0]}
+              isAnimationActive={true}
+              animationDuration={900}
+              animationEasing="ease-out"
             />
             {/* Price Area */}
             <Area
@@ -168,6 +171,9 @@ export default function StockPriceChart({
               strokeWidth={2.2}
               fillOpacity={1}
               fill="url(#priceGradient)"
+              isAnimationActive={true}
+              animationDuration={1200}
+              animationEasing="ease-out"
             />
           </ComposedChart>
         </ResponsiveContainer>

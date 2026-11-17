@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mail, Lock, Eye, EyeOff, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
-import { registerUser } from "../../api";
+import { registerUser, loginUser } from "../../api";
 
-export default function RegisterModal({ isOpen, onClose, onRegisterSuccess }) {
+export default function RegisterModal({ isOpen, onClose, onRegisterSuccess, onLoginSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,8 +16,15 @@ export default function RegisterModal({ isOpen, onClose, onRegisterSuccess }) {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!email || !password) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
       setErrorMsg("Please fill in all required fields.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorMsg("Please enter a valid email address.");
       return;
     }
 
@@ -33,13 +40,28 @@ export default function RegisterModal({ isOpen, onClose, onRegisterSuccess }) {
 
     setLoading(true);
     try {
-      await registerUser(email, password);
+      await registerUser(cleanEmail, password);
       setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        onRegisterSuccess(email);
-        onClose();
-      }, 1500);
+
+      // Auto-authenticate immediately for smooth seamless onboarding
+      try {
+        const loginRes = await loginUser(cleanEmail, password);
+        setTimeout(() => {
+          setSuccess(false);
+          onClose();
+          if (onLoginSuccess && loginRes.access_token) {
+            onLoginSuccess(loginRes.access_token, loginRes.email, loginRes.user_id);
+          } else if (onRegisterSuccess) {
+            onRegisterSuccess(cleanEmail);
+          }
+        }, 1200);
+      } catch (loginErr) {
+        setTimeout(() => {
+          setSuccess(false);
+          if (onRegisterSuccess) onRegisterSuccess(cleanEmail);
+          onClose();
+        }, 1500);
+      }
     } catch (err) {
       setErrorMsg(err.message || "Failed to create account. Please try again.");
     } finally {
