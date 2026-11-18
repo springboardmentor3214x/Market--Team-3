@@ -43,9 +43,9 @@ export default function AIAgentCards({
       status: fundamental ? "Analyzed" : agentLoading ? "Analyzing..." : "Standby",
       statusDetail: fundamental
         ? `Rating: ${fundamental.rating} (${fundamental.overall_fundamental_score}/100)`
-        : "Module 3 Engine Ready",
+        : "Autonomous Agent Ready",
       color: "#00ff87",
-      tag: "LangGraph Agent 1",
+      tag: "Agent #1",
       chips: fundamental
         ? [
             fundamental.ratios.pe_ratio ? `P/E: ${fundamental.ratios.pe_ratio}x` : null,
@@ -66,9 +66,9 @@ export default function AIAgentCards({
       status: technical ? "Analyzed" : agentLoading ? "Analyzing..." : "Standby",
       statusDetail: technical
         ? `Trend: ${technical.indicators_summary.primary_trend}`
-        : "Module 3 Engine Ready",
+        : "Autonomous Agent Ready",
       color: "#00e5ff",
-      tag: "LangGraph Agent 2",
+      tag: "Agent #2",
       chips: technical
         ? [
             `RSI-14: ${technical.indicators_summary.rsi_14} (${technical.indicators_summary.rsi_condition})`,
@@ -90,9 +90,9 @@ export default function AIAgentCards({
       status: news ? "Analyzed" : agentLoading ? "Analyzing..." : "Standby",
       statusDetail: news
         ? `Sentiment: ${news.overall_sentiment_label} (${news.total_articles_analyzed} articles)`
-        : "Module 3 Engine Ready",
+        : "Autonomous Agent Ready",
       color: "#10b981",
-      tag: "LangGraph Agent 3",
+      tag: "Agent #3",
       chips: news
         ? [
             `Sentiment: ${news.overall_sentiment_label}`,
@@ -114,9 +114,9 @@ export default function AIAgentCards({
       status: risk ? "Analyzed" : agentLoading ? "Analyzing..." : "Standby",
       statusDetail: risk
         ? `Risk: ${risk.overall_risk_level} (Score: ${risk.risk_score}/100)`
-        : "Module 3 Engine Ready",
+        : "Autonomous Agent Ready",
       color: "#38bdf8",
-      tag: "LangGraph Agent 4",
+      tag: "Agent #4",
       chips: risk
         ? [
             `Max Drawdown: ${risk.maximum_drawdown_pct}%`,
@@ -135,7 +135,7 @@ export default function AIAgentCards({
       <div className="ws-card-header" style={{ marginBottom: "16px" }}>
         <div className="ws-card-title">
           <Cpu size={16} className="ws-card-title-icon" />
-          <span>Module 3: Specialized Financial Analysis AI Agents</span>
+          <span>Specialized Financial Analysis AI Agents</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {onRunAnalysis && (

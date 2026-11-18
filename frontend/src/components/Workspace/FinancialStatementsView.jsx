@@ -37,7 +37,7 @@ export default function FinancialStatementsView({
       <div className="ws-card-header">
         <div className="ws-card-title">
           <Database size={16} className="ws-card-title-icon" />
-          <span>Financial Statements (Requirement 7)</span>
+          <span>Financial Statements</span>
         </div>
 
         {/* Annual vs Quarterly Frequency Switch */}

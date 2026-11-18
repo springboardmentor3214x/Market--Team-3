@@ -86,7 +86,7 @@ export default function StockSearchBar({
       <div className="ws-card-header">
         <div className="ws-card-title">
           <Search size={16} className="ws-card-title-icon" />
-          <span>Stock Search & Market Data Collection (Module 2)</span>
+          <span>Stock Search & Market Intelligence</span>
         </div>
         <div className="ws-market-pill-selector">
           {["NSE", "BSE", "NYSE", "NASDAQ"].map((m) => (

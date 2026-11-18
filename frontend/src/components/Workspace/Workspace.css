@@ -620,9 +620,29 @@
   color: #cbd5e1;
   line-height: 1.6;
   background: rgba(0, 0, 0, 0.25);
-  padding: 14px;
+  padding: 14px 16px;
   border-radius: 9px;
   border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.3s ease;
+}
+
+.ws-read-more-btn {
+  background: none;
+  border: none;
+  color: var(--ws-accent-green);
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s ease;
+}
+
+.ws-read-more-btn:hover {
+  color: var(--ws-accent-cyan);
 }
 
 /* Data Validation Summary Cards Grid */

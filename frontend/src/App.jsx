@@ -11,7 +11,6 @@ import {
   searchStockData,
   fetchMultiAgentAnalysis,
 } from "./api";
-import { ChevronDown } from "lucide-react";
 import "./App.css";
 
 function App() {
@@ -20,10 +19,10 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem("jwt_token") || "");
   const [userEmail, setUserEmail] = useState(localStorage.getItem("user_email") || "");
 
-  // --- Transition State ---
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [loginHidden, setLoginHidden] = useState(alreadyLoggedIn);
-  const workspaceRef = useRef(null);
+  // --- Cinematic Crossfade Transition State ---
+  const [showLogin, setShowLogin] = useState(!alreadyLoggedIn);
+  const [showWorkspace, setShowWorkspace] = useState(alreadyLoggedIn);
+  const [transitionPhase, setTransitionPhase] = useState("idle"); // idle | fading | done
 
   // --- Workspace State ---
   const [market, setMarket] = useState("NSE");
@@ -42,7 +41,7 @@ function App() {
   const [agentAnalysis, setAgentAnalysis] = useState(null);
   const [agentLoading, setAgentLoading] = useState(false);
 
-  // Initialize Lenis Smooth Inertial Scrolling (Matches video reference)
+  // Initialize Lenis Smooth Inertial Scrolling
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.25,
@@ -85,39 +84,31 @@ function App() {
     if (token) loadUserWorkspace();
   }, [token]);
 
-  // --- Smooth Scroll Transition Handler ---
+  // --- Cinematic Crossfade Login → Workspace ---
   const handleLoginSuccess = (jwtToken, loggedInEmail, loggedInUserId) => {
     localStorage.setItem("jwt_token", jwtToken);
     localStorage.setItem("user_email", loggedInEmail);
     setUserEmail(loggedInEmail);
     setToken(jwtToken);
-    setIsTransitioning(true);
 
-    // Wait for workspace to render, then smoothly scroll with Lenis
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (window.lenis && workspaceRef.current) {
-          window.lenis.scrollTo(workspaceRef.current, {
-            duration: 1.4,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-          });
-        } else if (workspaceRef.current) {
-          workspaceRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }
-        // After scroll completes, hide login and snap to top
-        setTimeout(() => {
-          setLoginHidden(true);
-          setIsTransitioning(false);
-          requestAnimationFrame(() => {
-            if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
-            else window.scrollTo(0, 0);
-          });
-        }, 1400);
-      }, 200);
-    });
+    // Reset scroll to top immediately
+    if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+    else window.scrollTo(0, 0);
+
+    // Phase 1: Start fade-out of login, fade-in workspace overlay
+    setTransitionPhase("fading");
+    setShowWorkspace(true);
+
+    // Phase 2: After crossfade completes, remove login from DOM entirely
+    setTimeout(() => {
+      setShowLogin(false);
+      setTransitionPhase("done");
+      // Ensure scroll is at top of workspace
+      if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+      else window.scrollTo(0, 0);
+      // Final cleanup
+      setTimeout(() => setTransitionPhase("idle"), 100);
+    }, 900);
   };
 
   const handleLogout = () => {
@@ -127,7 +118,9 @@ function App() {
     setUserEmail("");
     setStockResult(null);
     setAgentAnalysis(null);
-    setLoginHidden(false);
+    setTransitionPhase("idle");
+    setShowLogin(true);
+    setShowWorkspace(false);
     if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
     else window.scrollTo(0, 0);
   };
@@ -198,63 +191,70 @@ function App() {
   };
 
   // ==========================================
-  // SINGLE RENDER PATH — no component remounting
-  // Login is hidden via CSS when loginHidden=true
+  // CINEMATIC CROSSFADE — zero jump, zero glitch
+  // Login overlays fixed & fades/blurs out while Workspace reveals smoothly
   // ==========================================
   return (
-    <div className="app-scroll-container">
-      {/* ===== SECTION 1: LOGIN (hidden after transition) ===== */}
-      {!loginHidden && (
-        <section className="app-scroll-section">
-          <LoginPage onLoginSuccess={handleLoginSuccess} />
-        </section>
-      )}
-
-      {/* ===== TRANSITION BANNER ===== */}
+    <div className="app-crossfade-container">
+      {/* ===== LOGIN LAYER (crossfades out on success) ===== */}
       <AnimatePresence>
-        {isTransitioning && (
+        {showLogin && (
           <motion.div
-            className="scroll-transition-banner"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.4 }}
+            className={`app-crossfade-layer app-crossfade-login ${
+              transitionPhase === "fading" ? "is-fading" : ""
+            }`}
+            initial={{ opacity: 1, scale: 1 }}
+            animate={{
+              opacity: transitionPhase === "fading" ? 0 : 1,
+              scale: transitionPhase === "fading" ? 1.03 : 1,
+              filter: transitionPhase === "fading" ? "blur(10px)" : "blur(0px)",
+            }}
+            exit={{ opacity: 0, scale: 1.04, filter: "blur(12px)" }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="scroll-pulse-dot" />
-            <span>Initializing Research Workspace</span>
-            <ChevronDown size={18} className="bounce-arrow" />
+            <LoginPage onLoginSuccess={handleLoginSuccess} />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ===== SECTION 2: WORKSPACE ===== */}
-      {token && (
-        <section ref={workspaceRef} className="app-scroll-section">
-          <Workspace
-            userEmail={userEmail}
-            onLogout={handleLogout}
-            market={market}
-            setMarket={setMarket}
-            period={period}
-            setPeriod={setPeriod}
-            onPreferenceSave={handlePreferenceSave}
-            watchlist={watchlist}
-            history={history}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            onStockSearch={handleStockSearch}
-            loading={loading}
-            stockResult={stockResult}
-            searchError={searchError}
-            onAddToWatchlist={handleAddToWatchlist}
-            activeStatement={activeStatement}
-            setActiveStatement={setActiveStatement}
-            agentAnalysis={agentAnalysis}
-            agentLoading={agentLoading}
-            onRunAgentAnalysis={handleRunAgentAnalysis}
-          />
-        </section>
-      )}
+      {/* ===== WORKSPACE LAYER (reveals smoothly at top) ===== */}
+      <AnimatePresence>
+        {showWorkspace && (
+          <motion.div
+            className="app-crossfade-layer app-crossfade-workspace"
+            initial={{ opacity: transitionPhase === "fading" ? 0 : 1, y: transitionPhase === "fading" ? 16 : 0 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Workspace
+              userEmail={userEmail}
+              onLogout={handleLogout}
+              market={market}
+              setMarket={setMarket}
+              period={period}
+              setPeriod={setPeriod}
+              onPreferenceSave={handlePreferenceSave}
+              watchlist={watchlist}
+              history={history}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onStockSearch={handleStockSearch}
+              loading={loading}
+              stockResult={stockResult}
+              searchError={searchError}
+              onAddToWatchlist={handleAddToWatchlist}
+              activeStatement={activeStatement}
+              setActiveStatement={setActiveStatement}
+              agentAnalysis={agentAnalysis}
+              agentLoading={agentLoading}
+              onRunAgentAnalysis={handleRunAgentAnalysis}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

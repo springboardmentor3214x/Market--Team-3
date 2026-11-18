@@ -44,6 +44,15 @@ export default function Workspace({
   agentLoading,
   onRunAgentAnalysis,
 }) {
+  const [descExpanded, setDescExpanded] = useState(false);
+
+  const formatDescription = (text, expanded) => {
+    if (!text) return "";
+    if (expanded || text.length <= 350) return text;
+    const cut = text.lastIndexOf(" ", 350);
+    return (cut > 0 ? text.slice(0, cut) : text.slice(0, 350)) + "...";
+  };
+
   const handlePeriodChange = (newPeriod) => {
     setPeriod(newPeriod);
     if (stockResult?.source_metadata?.ticker) {
@@ -98,7 +107,7 @@ export default function Workspace({
             <div className="ws-brand-text">
               <span className="ws-brand-title">MARKET INTELLIGENCE AI</span>
               <span className="ws-brand-subtitle">
-                MULTI-AGENT RESEARCH ENGINE • MODULE 2
+                MULTI-AGENT RESEARCH ENGINE
               </span>
             </div>
             <div className="ws-status-badge">
@@ -144,7 +153,6 @@ export default function Workspace({
                   <Globe size={16} className="ws-card-title-icon" />
                   <span>User Preferences</span>
                 </div>
-                <span className="ws-count-badge">Module 1</span>
               </div>
 
               <div className="ws-form-group">
@@ -403,9 +411,20 @@ export default function Workspace({
                     </div>
 
                     {stockResult.company_profile.description && (
-                      <p className="ws-company-desc">
-                        {stockResult.company_profile.description.slice(0, 520)}...
-                      </p>
+                      <div className="ws-company-desc">
+                        <p style={{ margin: 0 }}>
+                          {formatDescription(stockResult.company_profile.description, descExpanded)}
+                        </p>
+                        {stockResult.company_profile.description.length > 350 && (
+                          <button
+                            type="button"
+                            className="ws-read-more-btn"
+                            onClick={() => setDescExpanded((prev) => !prev)}
+                          >
+                            {descExpanded ? "Show Less ↑" : "Show More Description ↓"}
+                          </button>
+                        )}
+                      </div>
                     )}
                   </motion.div>
 
@@ -451,7 +470,7 @@ export default function Workspace({
                     <div className="ws-card-header">
                       <div className="ws-card-title">
                         <ShieldCheck size={16} className="ws-card-title-icon" />
-                        <span>Data Quality & Validation Audit (Requirement 8)</span>
+                        <span>Data Quality & Validation Audit</span>
                       </div>
                       <span
                         className={`ws-count-badge ${
