@@ -139,3 +139,47 @@ export const searchStockData = async (query, market, period) => {
   if (!res.ok) throw new Error(data.detail || "Stock not found");
   return data;
 };
+
+// ==========================================
+// MODULE 3: SPECIALIZED AI AGENTS APIS
+// ==========================================
+
+export const fetchMultiAgentAnalysis = async (ticker, market = "NSE", period = "6mo") => {
+  const params = new URLSearchParams({ ticker, market, period });
+  const res = await fetch(`${API_BASE_URL}/api/agents/all?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to run multi-agent analysis");
+  return data;
+};
+
+export const fetchFundamentalAnalysis = async (ticker, market = "NSE") => {
+  const params = new URLSearchParams({ ticker, market });
+  const res = await fetch(`${API_BASE_URL}/api/agents/fundamental?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Fundamental analysis failed");
+  return data;
+};
+
+export const fetchTechnicalAnalysis = async (ticker, market = "NSE", period = "6mo") => {
+  const params = new URLSearchParams({ ticker, market, period });
+  const res = await fetch(`${API_BASE_URL}/api/agents/technical?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Technical analysis failed");
+  return data;
+};
+
+export const fetchNewsAnalysis = async (ticker, market = "NSE") => {
+  const params = new URLSearchParams({ ticker, market });
+  const res = await fetch(`${API_BASE_URL}/api/agents/news?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "News analysis failed");
+  return data;
+};
+
+export const fetchRiskAnalysis = async (ticker, market = "NSE", period = "6mo") => {
+  const params = new URLSearchParams({ ticker, market, period });
+  const res = await fetch(`${API_BASE_URL}/api/agents/risk?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Risk analysis failed");
+  return data;
+};

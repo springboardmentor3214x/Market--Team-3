@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 import LoginPage from "./components/Login/LoginPage";
 import Workspace from "./components/Workspace/Workspace";
 import {
@@ -7,6 +9,7 @@ import {
   savePreferences,
   addStockToWatchlist,
   searchStockData,
+  fetchMultiAgentAnalysis,
 } from "./api";
 import { ChevronDown } from "lucide-react";
 import "./App.css";
@@ -35,6 +38,34 @@ function App() {
   const [searchError, setSearchError] = useState("");
   const [activeStatement, setActiveStatement] = useState("income_statement");
 
+  // --- Module 3: Specialized AI Agent State ---
+  const [agentAnalysis, setAgentAnalysis] = useState(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+
+  // Initialize Lenis Smooth Inertial Scrolling (Matches video reference)
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.25,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1.05,
+      touchMultiplier: 1.8,
+    });
+    window.lenis = lenis;
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    const rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+      delete window.lenis;
+    };
+  }, []);
+
   // Load workspace data
   const loadUserWorkspace = async () => {
     try {
@@ -62,10 +93,15 @@ function App() {
     setToken(jwtToken);
     setIsTransitioning(true);
 
-    // Wait for workspace to render, then scroll
+    // Wait for workspace to render, then smoothly scroll with Lenis
     requestAnimationFrame(() => {
       setTimeout(() => {
-        if (workspaceRef.current) {
+        if (window.lenis && workspaceRef.current) {
+          window.lenis.scrollTo(workspaceRef.current, {
+            duration: 1.4,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          });
+        } else if (workspaceRef.current) {
           workspaceRef.current.scrollIntoView({
             behavior: "smooth",
             block: "start",
@@ -75,9 +111,9 @@ function App() {
         setTimeout(() => {
           setLoginHidden(true);
           setIsTransitioning(false);
-          // Use rAF to ensure DOM has updated before scrolling
           requestAnimationFrame(() => {
-            window.scrollTo(0, 0);
+            if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+            else window.scrollTo(0, 0);
           });
         }, 1400);
       }, 200);
@@ -90,8 +126,10 @@ function App() {
     setToken("");
     setUserEmail("");
     setStockResult(null);
+    setAgentAnalysis(null);
     setLoginHidden(false);
-    window.scrollTo(0, 0);
+    if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+    else window.scrollTo(0, 0);
   };
 
   const handlePreferenceSave = async () => {
@@ -100,6 +138,23 @@ function App() {
       alert(`Preferences saved: Market (${market}), Period (${period})`);
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handleRunAgentAnalysis = async (tickerOverride = null, marketOverride = null, periodOverride = null) => {
+    const t = tickerOverride || stockResult?.source_metadata?.ticker || searchQuery;
+    const m = marketOverride || stockResult?.source_metadata?.exchange || market;
+    const p = periodOverride || period;
+    if (!t) return;
+
+    setAgentLoading(true);
+    try {
+      const data = await fetchMultiAgentAnalysis(t, m, p);
+      setAgentAnalysis(data);
+    } catch (err) {
+      console.error("Multi-Agent analysis error:", err);
+    } finally {
+      setAgentLoading(false);
     }
   };
 
@@ -116,9 +171,15 @@ function App() {
       const result = await searchStockData(q, m, p);
       setStockResult(result);
       loadUserWorkspace();
+
+      // Trigger Module 3 Multi-Agent Research Swarm concurrently
+      const resolvedTicker = result.source_metadata?.ticker || q;
+      const resolvedMarket = result.source_metadata?.exchange || m;
+      handleRunAgentAnalysis(resolvedTicker, resolvedMarket, p);
     } catch (err) {
       setSearchError(err.message);
       setStockResult(null);
+      setAgentAnalysis(null);
     } finally {
       setLoading(false);
     }
@@ -188,6 +249,9 @@ function App() {
             onAddToWatchlist={handleAddToWatchlist}
             activeStatement={activeStatement}
             setActiveStatement={setActiveStatement}
+            agentAnalysis={agentAnalysis}
+            agentLoading={agentLoading}
+            onRunAgentAnalysis={handleRunAgentAnalysis}
           />
         </section>
       )}

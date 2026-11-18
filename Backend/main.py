@@ -8,6 +8,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models, database, schemas, auth, market_service
+from agents import agent_orchestrator
 
 # Create all PostgreSQL tables automatically on startup
 models.Base.metadata.create_all(bind=database.engine)
@@ -240,3 +241,85 @@ def search_and_collect_stock_data(
     db.commit()
 
     return stock_data
+
+
+# =============================================================================
+# MODULE 3: SPECIALIZED FINANCIAL ANALYSIS AI AGENTS APIS
+# =============================================================================
+
+@app.get("/api/agents/fundamental", tags=["Module 3: AI Agents"])
+def get_fundamental_analysis(
+    ticker: str = Query(..., description="Stock ticker symbol (e.g. INFY.NS, AAPL)"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+):
+    """
+    Module 3 - Agent 1: Fundamental Analysis Agent.
+    Evaluates revenue, earnings, profitability, debt/solvency ratios, and historical growth.
+    """
+    try:
+        return agent_orchestrator.run_fundamental(ticker=ticker, exchange=market)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fundamental analysis failed: {str(e)}")
+
+
+@app.get("/api/agents/technical", tags=["Module 3: AI Agents"])
+def get_technical_analysis(
+    ticker: str = Query(..., description="Stock ticker symbol (e.g. INFY.NS, AAPL)"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+    period: str = Query("6mo", description="Historical period: 1mo, 3mo, 6mo, 1y, 5y"),
+):
+    """
+    Module 3 - Agent 2: Technical Analysis Agent.
+    Computes SMA (20, 50, 200), EMA (12, 26), RSI-14, MACD, and historical volatility.
+    """
+    try:
+        return agent_orchestrator.run_technical(ticker=ticker, exchange=market, period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Technical analysis failed: {str(e)}")
+
+
+@app.get("/api/agents/news", tags=["Module 3: AI Agents"])
+def get_news_and_sentiment_analysis(
+    ticker: str = Query(..., description="Stock ticker symbol (e.g. INFY.NS, AAPL)"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+):
+    """
+    Module 3 - Agent 3: News and Sentiment Analysis Agent.
+    Extracts real corporate headlines, detects event types, classifies sentiment, and checks conflicts.
+    """
+    try:
+        return agent_orchestrator.run_news(ticker=ticker, exchange=market)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"News analysis failed: {str(e)}")
+
+
+@app.get("/api/agents/risk", tags=["Module 3: AI Agents"])
+def get_risk_analysis(
+    ticker: str = Query(..., description="Stock ticker symbol (e.g. INFY.NS, AAPL)"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+    period: str = Query("6mo", description="Historical period: 1mo, 3mo, 6mo, 1y, 5y"),
+):
+    """
+    Module 3 - Agent 4: Risk Analysis Agent.
+    Calculates historical volatility, maximum drawdown, financial balance sheet risks, and scenario projections.
+    """
+    try:
+        return agent_orchestrator.run_risk(ticker=ticker, exchange=market, period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Risk analysis failed: {str(e)}")
+
+
+@app.get("/api/agents/all", tags=["Module 3: AI Agents"])
+def get_full_multi_agent_analysis(
+    ticker: str = Query(..., description="Stock ticker symbol (e.g. INFY.NS, AAPL)"),
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+    period: str = Query("6mo", description="Historical period: 1mo, 3mo, 6mo, 1y, 5y"),
+):
+    """
+    Module 3 - Full Multi-Agent Suite:
+    Executes Fundamental, Technical, News, and Risk agents concurrently and synthesizes cross-agent divergences.
+    """
+    try:
+        return agent_orchestrator.run_all(ticker=ticker, exchange=market, period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Multi-agent analysis failed: {str(e)}")

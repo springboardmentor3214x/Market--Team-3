@@ -6,25 +6,26 @@ export default function TiltCard({
   className = "",
   style = {},
   onClick,
-  maxTilt = 5,
+  maxTilt = 10,
+  glareColor = "rgba(0, 255, 135, 0.16)",
 }) {
   const cardRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Mouse position values (-0.5 to 0.5)
+  // Normalized mouse coordinates: -0.5 to 0.5
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Smooth physics-based spring animation
-  const springConfig = { damping: 25, stiffness: 350 };
+  // Snappy yet smooth spring physics
+  const springConfig = { damping: 20, stiffness: 300 };
   const mouseXSpring = useSpring(x, springConfig);
   const mouseYSpring = useSpring(y, springConfig);
 
-  // Map to 3D rotation angles
+  // Map to true 3D rotation angles
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [maxTilt, -maxTilt]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [-maxTilt, maxTilt]);
 
-  // Spotlight coordinates
+  // Spotlight glare coordinates in pixels
   const [glarePos, setGlarePos] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e) => {
@@ -44,7 +45,11 @@ export default function TiltCard({
     setGlarePos({ x: mouseX, y: mouseY });
   };
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (e) => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      setGlarePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
     setIsHovered(true);
   };
 
@@ -55,32 +60,41 @@ export default function TiltCard({
   };
 
   return (
-    <motion.div
-      ref={cardRef}
-      className={`ws-tilt-card ${className}`}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={onClick}
-      style={{
-        transformStyle: "preserve-3d",
-        rotateX,
-        rotateY,
-        ...style,
-      }}
-      whileHover={{ y: -3 }}
-      transition={{ duration: 0.2 }}
-    >
-      {/* Subtle cursor spotlight effect */}
-      {isHovered && (
+    <div className="ws-tilt-wrapper" style={{ perspective: "1000px" }}>
+      <motion.div
+        ref={cardRef}
+        className={`ws-tilt-card ${className}`}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={onClick}
+        style={{
+          transformStyle: "preserve-3d",
+          rotateX,
+          rotateY,
+          ...style,
+        }}
+        whileHover={{
+          y: -4,
+          boxShadow: "0 16px 36px -8px rgba(0, 255, 135, 0.18), 0 0 20px rgba(0, 255, 135, 0.1)",
+        }}
+        transition={{ duration: 0.2 }}
+      >
+        {/* Dynamic Interactive Cursor Spotlight Glare */}
         <div
           className="ws-card-spotlight"
           style={{
-            background: `radial-gradient(circle 220px at ${glarePos.x}px ${glarePos.y}px, rgba(0, 255, 135, 0.08), transparent 80%)`,
+            opacity: isHovered ? 1 : 0,
+            background: `radial-gradient(circle 260px at ${glarePos.x}px ${glarePos.y}px, ${glareColor}, transparent 75%)`,
+            transition: isHovered ? "opacity 0.2s ease" : "opacity 0.4s ease",
           }}
         />
-      )}
-      {children}
-    </motion.div>
+
+        {/* Card Content with 3D Depth */}
+        <div className="ws-tilt-inner" style={{ transform: "translateZ(12px)", transformStyle: "preserve-3d" }}>
+          {children}
+        </div>
+      </motion.div>
+    </div>
   );
 }

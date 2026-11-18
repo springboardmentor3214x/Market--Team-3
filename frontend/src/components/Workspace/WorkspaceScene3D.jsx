@@ -315,7 +315,7 @@ export default function WorkspaceScene3D() {
       ref={containerRef}
       className="workspace-3d-canvas-container"
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
         pointerEvents: "none",
         zIndex: 0,

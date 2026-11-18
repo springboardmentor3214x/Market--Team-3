@@ -40,6 +40,9 @@ export default function Workspace({
   stockResult,
   searchError,
   onAddToWatchlist,
+  agentAnalysis,
+  agentLoading,
+  onRunAgentAnalysis,
 }) {
   const handlePeriodChange = (newPeriod) => {
     setPeriod(newPeriod);
@@ -290,7 +293,13 @@ export default function Workspace({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.15 }}
               >
-                <AIAgentCards />
+                <AIAgentCards
+                  agentAnalysis={agentAnalysis}
+                  agentLoading={agentLoading}
+                  onRunAnalysis={onRunAgentAnalysis}
+                  ticker={searchQuery}
+                  currency={market === "NSE" || market === "BSE" ? "INR" : "USD"}
+                />
               </motion.div>
             )}
 
@@ -417,7 +426,19 @@ export default function Workspace({
                   </motion.div>
 
                   {/* Multi-Agent Swarm Section (Requirement 5) */}
-                  <AIAgentCards />
+                  <AIAgentCards
+                    agentAnalysis={agentAnalysis}
+                    agentLoading={agentLoading}
+                    onRunAnalysis={() =>
+                      onRunAgentAnalysis(
+                        stockResult.source_metadata.ticker,
+                        stockResult.source_metadata.exchange,
+                        period
+                      )
+                    }
+                    ticker={stockResult.source_metadata.ticker}
+                    currency={stockResult.source_metadata.currency}
+                  />
 
                   {/* 4. Data Validation & Quality Summary Card (Requirement 8) */}
                   <motion.div

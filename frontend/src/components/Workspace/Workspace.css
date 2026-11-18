@@ -38,7 +38,7 @@
 
 /* Ambient Radial Glows & Grid (Matches Login Page) */
 .workspace-ambient {
-  position: absolute;
+  position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
@@ -634,19 +634,50 @@
 }
 
 .ws-stat-card {
-  padding: 14px 16px;
-  border-radius: 10px;
-  background: rgba(5, 8, 14, 0.5);
+  position: relative;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(8, 14, 22, 0.7);
   border: 1px solid var(--ws-border-glass-subtle);
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  cursor: default;
+}
+
+.ws-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 135, 0.3), transparent);
+  opacity: 0.4;
+  transition: opacity 0.25s ease;
 }
 
 .ws-stat-card:hover {
-  border-color: rgba(0, 255, 135, 0.25);
-  transform: translateY(-2px);
+  border-color: rgba(0, 255, 135, 0.35);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 255, 135, 0.12);
+}
+
+.ws-stat-card:hover::before {
+  opacity: 1;
+  background: linear-gradient(90deg, transparent, #00ff87, transparent);
+}
+
+.ws-stat-card.stat-valid::before {
+  background: linear-gradient(90deg, transparent, #00ff87, transparent);
+  opacity: 0.8;
+}
+
+.ws-stat-card.stat-initial::before {
+  background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+  opacity: 0.8;
 }
 
 .ws-stat-label {
@@ -758,8 +789,17 @@
   font-size: 12px;
 }
 
-.ws-table tr:hover td {
-  background: rgba(0, 255, 135, 0.03);
+.ws-table tr {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ws-table tbody tr:hover td {
+  background: rgba(0, 255, 135, 0.05);
+}
+
+.ws-table tbody tr:hover td:first-child {
+  border-left: 2px solid var(--ws-accent-green);
+  padding-left: 14px;
 }
 
 .ws-table td.highlight-price {
@@ -1114,10 +1154,22 @@
 /* ==========================================================================
    3D TILT CARDS & SPOTLIGHT
    ========================================================================== */
+.ws-tilt-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .ws-tilt-card {
   position: relative;
   overflow: hidden;
   will-change: transform;
+  transform-style: preserve-3d;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ws-tilt-inner {
+  position: relative;
+  z-index: 3;
 }
 
 .ws-card-spotlight {
@@ -1125,7 +1177,16 @@
   inset: 0;
   pointer-events: none;
   z-index: 2;
-  transition: opacity 0.3s ease;
+  border-radius: inherit;
+}
+
+/* ==========================================================================
+   ANIMATED NUMBER COUNTER
+   ========================================================================== */
+.ws-animated-counter.ws-counter-active {
+  color: var(--ws-accent-green) !important;
+  text-shadow: 0 0 14px rgba(0, 255, 135, 0.7);
+  transition: all 0.2s ease;
 }
 
 /* ==========================================================================
@@ -1136,6 +1197,19 @@
   margin-bottom: 24px;
 }
 
+.ws-agents-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(0, 255, 135, 0.08);
+  border: 1px solid rgba(0, 255, 135, 0.25);
+  font-size: 11px;
+  font-family: var(--ws-font-mono);
+  color: var(--ws-accent-green);
+}
+
 .ws-agents-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1143,22 +1217,38 @@
 }
 
 .ws-agent-card {
-  padding: 20px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 200px;
+  min-height: 210px;
   background: rgba(10, 18, 28, 0.75);
   border: 1px solid var(--ws-border-glass-subtle);
   border-radius: 14px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  position: relative;
 }
 
 .ws-agent-card:hover {
   border-color: var(--ws-border-glass);
-  box-shadow: 0 10px 30px -10px rgba(0, 255, 135, 0.15);
+  box-shadow: 0 14px 36px -10px rgba(0, 255, 135, 0.18), 0 0 24px rgba(0, 255, 135, 0.1);
+}
+
+.ws-agent-border-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  opacity: 0.65;
+  transition: opacity 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ws-agent-card:hover .ws-agent-border-glow {
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(0, 255, 135, 0.8);
 }
 
 .ws-agent-top {
@@ -1169,22 +1259,25 @@
 }
 
 .ws-agent-icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(0, 255, 135, 0.25);
+  box-shadow: 0 0 14px rgba(0, 255, 135, 0.12);
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
 .ws-agent-pulse-icon {
-  animation: agent-pulse 3s ease-in-out infinite alternate;
+  animation: agent-pulse 2.8s ease-in-out infinite alternate;
 }
 
 @keyframes agent-pulse {
   0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(0, 255, 135, 0.4)); }
-  100% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(0, 255, 135, 0.8)); }
+  100% { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(0, 255, 135, 0.85)); }
 }
 
 .ws-agent-tag {
@@ -1227,7 +1320,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 11px;
 }
@@ -1235,7 +1328,29 @@
 .ws-agent-status-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.ws-agent-radar-box {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ws-agent-radar-ping {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid #38bdf8;
+  animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes radar-ping {
+  0% { transform: scale(0.8); opacity: 0.9; }
+  75%, 100% { transform: scale(2.4); opacity: 0; }
 }
 
 .ws-agent-idle-dot {
@@ -1243,7 +1358,7 @@
   height: 7px;
   border-radius: 50%;
   background-color: #38bdf8;
-  box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.9);
 }
 
 .ws-agent-status-text {
@@ -1251,6 +1366,31 @@
   font-weight: 600;
   color: #38bdf8;
   letter-spacing: 0.03em;
+}
+
+/* Telemetry Equalizer Bars */
+.ws-agent-telemetry-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 12px;
+}
+
+.ws-agent-telemetry-bars .bar {
+  width: 2.5px;
+  background: var(--ws-accent-green);
+  border-radius: 1px;
+  animation: bar-jump 1.4s ease-in-out infinite alternate;
+}
+
+.ws-agent-telemetry-bars .bar-1 { height: 4px; animation-delay: 0.1s; }
+.ws-agent-telemetry-bars .bar-2 { height: 10px; animation-delay: 0.35s; }
+.ws-agent-telemetry-bars .bar-3 { height: 7px; animation-delay: 0.2s; }
+.ws-agent-telemetry-bars .bar-4 { height: 12px; animation-delay: 0.5s; }
+
+@keyframes bar-jump {
+  0% { height: 3px; opacity: 0.35; }
+  100% { height: 12px; opacity: 0.95; }
 }
 
 .ws-agent-detail {
@@ -1263,6 +1403,49 @@
   .ws-agents-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ==========================================================================
+   WORKSPACE MODALS (TECHNICAL, NEWS, RISK DEEP DIVES)
+   ========================================================================== */
+.ws-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 5, 10, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.ws-modal-content {
+  position: relative;
+  background: rgba(10, 18, 28, 0.96) !important;
+  border: 1px solid var(--ws-border-glass) !important;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 255, 135, 0.15);
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--ws-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* Responsive Media Queries */
