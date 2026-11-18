@@ -30,6 +30,15 @@
   position: relative;
   min-height: 100vh;
   background-color: var(--ws-bg-deep);
+  background-image: 
+    radial-gradient(circle at 18% 15%, rgba(0, 255, 135, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 35%, rgba(0, 229, 255, 0.07) 0%, transparent 40%),
+    radial-gradient(circle at 20% 65%, rgba(0, 255, 135, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 80% 88%, rgba(0, 184, 107, 0.09) 0%, transparent 42%),
+    linear-gradient(rgba(0, 255, 135, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 135, 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 50px 50px, 50px 50px;
+  background-attachment: fixed;
   color: var(--ws-text-primary);
   font-family: var(--ws-font-sans);
   overflow-x: hidden;
@@ -49,7 +58,7 @@
   position: absolute;
   border-radius: 50%;
   filter: blur(120px);
-  opacity: 0.28;
+  opacity: 0.32;
   pointer-events: none;
 }
 
@@ -67,16 +76,25 @@
   top: 40%;
   right: -100px;
   background: radial-gradient(circle, #00e5ff, rgba(0, 229, 255, 0.05));
-  opacity: 0.18;
+  opacity: 0.22;
 }
 
 .ws-glow-bottom {
   width: 700px;
   height: 450px;
-  bottom: -150px;
-  left: 25%;
+  bottom: -100px;
+  left: 20%;
   background: radial-gradient(circle, #00b86b, rgba(5, 8, 14, 0));
-  opacity: 0.22;
+  opacity: 0.28;
+}
+
+.ws-glow-deep {
+  width: 750px;
+  height: 500px;
+  bottom: 25%;
+  right: 15%;
+  background: radial-gradient(circle, #00e5ff, rgba(0, 255, 135, 0.06));
+  opacity: 0.24;
 }
 
 .ws-grid-overlay {
@@ -645,6 +663,46 @@
   color: var(--ws-accent-cyan);
 }
 
+/* In-App Floating Toast Notification */
+.ws-app-toast {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(10, 18, 28, 0.92);
+  border: 1px solid rgba(0, 255, 135, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 135, 0.15);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.ws-app-toast.error {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.ws-toast-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ff87;
+  box-shadow: 0 0 8px #00ff87;
+  flex-shrink: 0;
+}
+
+.ws-app-toast.error .ws-toast-dot {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
 /* Data Validation Summary Cards Grid */
 .ws-stats-grid {
   display: grid;
@@ -1001,6 +1059,41 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--ws-text-primary);
+}
+
+.ws-chart-kpi-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 255, 135, 0.06);
+  border: 1px solid rgba(0, 255, 135, 0.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.ws-kpi-val {
+  font-family: var(--ws-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ws-kpi-badge {
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.ws-kpi-badge.positive {
+  color: #00ff87;
+  background: rgba(0, 255, 135, 0.15);
+}
+
+.ws-kpi-badge.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .ws-period-btn-group {

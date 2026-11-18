@@ -88,6 +88,7 @@ export default function Workspace({
         <div className="ws-glow ws-glow-top" />
         <div className="ws-glow ws-glow-center" />
         <div className="ws-glow ws-glow-bottom" />
+        <div className="ws-glow ws-glow-deep" />
         <div className="ws-grid-overlay" />
       </div>
 
@@ -174,7 +175,7 @@ export default function Workspace({
                 <select
                   className="ws-select"
                   value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
+                  onChange={(e) => handlePeriodChange(e.target.value)}
                 >
                   <option value="1mo">1 Month</option>
                   <option value="3mo">3 Months</option>

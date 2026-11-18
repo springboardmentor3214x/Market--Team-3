@@ -42,6 +42,12 @@ export default function StockPriceChart({
   const maxPrice = prices.length ? Math.max(...prices) : 100;
   const padding = (maxPrice - minPrice) * 0.05 || 5;
 
+  const latestClose = prices.length ? Number(prices[prices.length - 1]) : 0;
+  const firstClose = prices.length ? Number(prices[0]) : 0;
+  const priceDiff = latestClose - firstClose;
+  const pctChange = firstClose ? ((priceDiff / firstClose) * 100).toFixed(2) : "0.00";
+  const isUp = priceDiff >= 0;
+
   // Custom Glassmorphic Tooltip
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -89,9 +95,19 @@ export default function StockPriceChart({
   return (
     <div className="ws-chart-card">
       <div className="ws-chart-header">
-        <div className="ws-chart-title">
-          <TrendingUp size={16} color="#00ff87" />
-          <span>Interactive Price & Volume Analytics</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <div className="ws-chart-title">
+            <TrendingUp size={16} color="#00ff87" />
+            <span>Interactive Price & Volume Analytics</span>
+          </div>
+          {prices.length > 0 && (
+            <div className="ws-chart-kpi-pill">
+              <span className="ws-kpi-val">{currency} {latestClose.toFixed(2)}</span>
+              <span className={`ws-kpi-badge ${isUp ? "positive" : "negative"}`}>
+                {isUp ? "▲ +" : "▼ "}{pctChange}%
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Period Selector Buttons (1M, 3M, 6M, 1Y, 5Y) */}
@@ -112,7 +128,7 @@ export default function StockPriceChart({
 
       {/* Main Chart Container */}
       <div className="ws-chart-wrapper" style={{ width: "100%", height: 320 }}>
-        <ResponsiveContainer key={activePeriod} width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={ohlcvData}
             margin={{ top: 10, right: 10, left: -10, bottom: 0 }}

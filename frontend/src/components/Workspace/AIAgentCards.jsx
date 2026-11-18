@@ -13,9 +13,6 @@ import {
   RotateCcw,
 } from "lucide-react";
 import TiltCard from "./TiltCard";
-import TechnicalIndicatorsModal from "./TechnicalIndicatorsModal";
-import NewsAnalysisModal from "./NewsAnalysisModal";
-import RiskAnalysisModal from "./RiskAnalysisModal";
 
 export default function AIAgentCards({
   agentAnalysis = null,
@@ -24,8 +21,6 @@ export default function AIAgentCards({
   ticker = "",
   currency = "INR",
 }) {
-  const [activeModal, setActiveModal] = useState(null); // 'technical' | 'news' | 'risk' | null
-
   const fundamental = agentAnalysis?.fundamental;
   const technical = agentAnalysis?.technical;
   const news = agentAnalysis?.news;
@@ -212,12 +207,6 @@ export default function AIAgentCards({
                 className="ws-glass-card ws-agent-card ws-agent-animated-card"
                 maxTilt={10}
                 glareColor={`rgba(${index % 2 === 0 ? "0, 255, 135" : "0, 229, 255"}, 0.18)`}
-                onClick={() => {
-                  if (agent.hasModal && isAnalyzed) {
-                    setActiveModal(agent.modalKey);
-                  }
-                }}
-                style={{ cursor: agent.hasModal && isAnalyzed ? "pointer" : "default" }}
               >
                 {/* Border glow beam */}
                 <div
@@ -312,43 +301,13 @@ export default function AIAgentCards({
                     </span>
                   </div>
 
-                  {agent.hasModal && isAnalyzed ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: agent.color, fontSize: "11px" }}>
-                      <span>View Deep Dive</span>
-                      <ChevronRight size={13} />
-                    </div>
-                  ) : (
-                    <span className="ws-agent-detail">{agent.statusDetail}</span>
-                  )}
+                  <span className="ws-agent-detail">{agent.statusDetail}</span>
                 </div>
               </TiltCard>
             </motion.div>
           );
         })}
       </div>
-
-      {/* Modals for Deep Dive Details */}
-      <TechnicalIndicatorsModal
-        isOpen={activeModal === "technical"}
-        onClose={() => setActiveModal(null)}
-        technicalData={technical}
-        ticker={ticker}
-        currency={currency}
-      />
-
-      <NewsAnalysisModal
-        isOpen={activeModal === "news"}
-        onClose={() => setActiveModal(null)}
-        newsData={news}
-        ticker={ticker}
-      />
-
-      <RiskAnalysisModal
-        isOpen={activeModal === "risk"}
-        onClose={() => setActiveModal(null)}
-        riskData={risk}
-        ticker={ticker}
-      />
     </div>
   );
 }

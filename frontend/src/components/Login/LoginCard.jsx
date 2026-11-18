@@ -40,13 +40,6 @@ export default function LoginCard({ onLoginSuccess, onOpenRegister, onOpenForgot
     }
   }, []);
 
-  // Quick Demo account filler for testing
-  const handleQuickDemo = () => {
-    setEmail("demo@marketai.com");
-    setPassword("password123");
-    setAuthError("");
-  };
-
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setAuthError("");
@@ -133,15 +126,6 @@ export default function LoginCard({ onLoginSuccess, onOpenRegister, onOpenForgot
         <p className="card-subheading">
           Sign in to continue your intelligent market research.
         </p>
-      </div>
-
-      {/* Quick Demo Credentials Pill */}
-      <div className="demo-credentials-banner" onClick={handleQuickDemo}>
-        <div className="demo-left">
-          <Zap size={14} className="zap-icon" />
-          <span>Demo Account: <strong>demo@marketai.com</strong></span>
-        </div>
-        <span className="demo-action">1-Click Fill</span>
       </div>
 
       {/* Animated Alerts */}

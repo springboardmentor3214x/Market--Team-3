@@ -14,7 +14,7 @@ export default function WorkspaceScene3D() {
 
     // 1. Scene, Camera, Renderer
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x05080e, 0.025);
+    scene.fog = new THREE.FogExp2(0x05080e, 0.008);
 
     const camera = new THREE.PerspectiveCamera(
       50,
@@ -250,14 +250,16 @@ export default function WorkspaceScene3D() {
         targetY += (mouseY * 3 - targetY) * 0.03;
         currentScroll += (targetScroll - currentScroll) * 0.06;
 
+        // Subtle organic parallax clamped to keep objects visible across all scroll depths
+        const clampedScrollParallax = Math.min(Math.max(currentScroll * 0.003, 0), 6);
         camera.position.x = targetX;
-        camera.position.y = 15 + targetY - currentScroll * 0.015;
-        camera.position.z = 45 + currentScroll * 0.01;
-        camera.lookAt(0, -currentScroll * 0.008, 0);
+        camera.position.y = 15 + targetY - clampedScrollParallax;
+        camera.position.z = 45;
+        camera.lookAt(0, 0, 0);
 
-        // Parallax shift crystals and particles with scroll
-        crystalsGroup.position.y = -currentScroll * 0.012;
-        particles.position.y = -currentScroll * 0.018;
+        // Ambient floating particles and crystals that stay in frame
+        crystalsGroup.position.y = -clampedScrollParallax * 0.8 + Math.sin(elapsedTime * 0.6) * 1.2;
+        particles.position.y = -clampedScrollParallax * 0.5 + Math.cos(elapsedTime * 0.5) * 1.5;
 
         // Animate 3D market terrain wave
         const pos = planeGeo.attributes.position;

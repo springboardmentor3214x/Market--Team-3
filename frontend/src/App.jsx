@@ -41,6 +41,16 @@ function App() {
   const [agentAnalysis, setAgentAnalysis] = useState(null);
   const [agentLoading, setAgentLoading] = useState(false);
 
+  // --- In-App Non-Blocking Toast Notification ---
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3200);
+  };
+
   // Initialize Lenis Smooth Inertial Scrolling
   useEffect(() => {
     const lenis = new Lenis({
@@ -66,10 +76,10 @@ function App() {
   }, []);
 
   // Load workspace data
-  const loadUserWorkspace = async () => {
+  const loadUserWorkspace = async (initPreferences = false) => {
     try {
       const data = await fetchWorkspace();
-      if (data.preferences) {
+      if (initPreferences && data.preferences) {
         setMarket(data.preferences.preferred_market || "NSE");
         setPeriod(data.preferences.analysis_period || "6mo");
       }
@@ -81,7 +91,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (token) loadUserWorkspace();
+    if (token) loadUserWorkspace(true);
   }, [token]);
 
   // --- Cinematic Crossfade Login → Workspace ---
@@ -128,9 +138,9 @@ function App() {
   const handlePreferenceSave = async () => {
     try {
       await savePreferences(market, period);
-      alert(`Preferences saved: Market (${market}), Period (${period})`);
+      showToast(`Preferences saved: Market (${market}), Period (${period})`);
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
     }
   };
 
@@ -158,14 +168,21 @@ function App() {
     const p = customPeriod || period;
     if (!q.trim()) return;
 
+    if (customPeriod) {
+      setPeriod(customPeriod);
+    }
+    if (customMarket) {
+      setMarket(customMarket);
+    }
+
     setLoading(true);
     setSearchError("");
     try {
       const result = await searchStockData(q, m, p);
       setStockResult(result);
-      loadUserWorkspace();
+      loadUserWorkspace(false);
 
-      // Trigger Module 3 Multi-Agent Research Swarm concurrently
+      // Trigger Multi-Agent Research Swarm concurrently
       const resolvedTicker = result.source_metadata?.ticker || q;
       const resolvedMarket = result.source_metadata?.exchange || m;
       handleRunAgentAnalysis(resolvedTicker, resolvedMarket, p);
@@ -183,10 +200,10 @@ function App() {
     try {
       const meta = stockResult.source_metadata;
       await addStockToWatchlist(meta.ticker, meta.company_name, meta.exchange);
-      loadUserWorkspace();
-      alert(`${meta.company_name} added to your watchlist!`);
+      loadUserWorkspace(false);
+      showToast(`${meta.company_name} added to your watchlist!`);
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
     }
   };
 
@@ -222,11 +239,8 @@ function App() {
         {showWorkspace && (
           <motion.div
             className="app-crossfade-layer app-crossfade-workspace"
-            initial={{ opacity: transitionPhase === "fading" ? 0 : 1, y: transitionPhase === "fading" ? 16 : 0 }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
+            initial={{ opacity: transitionPhase === "fading" ? 0 : 1 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
           >
             <Workspace
@@ -252,6 +266,22 @@ function App() {
               agentLoading={agentLoading}
               onRunAgentAnalysis={handleRunAgentAnalysis}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Non-Blocking In-App Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className={`ws-app-toast ${toast.type || "success"}`}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.22 }}
+          >
+            <span className="ws-toast-dot" />
+            <span>{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
