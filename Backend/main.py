@@ -7,6 +7,7 @@ Integrates:
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import re
 import models, database, schemas, auth, market_service
 from agents import agent_orchestrator
@@ -18,6 +19,45 @@ app = FastAPI(
     title="AI-Powered Multi-Agent Stock Research Analyst API",
     description="Module 1 (Auth & Workspace) + Module 2 (Stock Search & Market Data Collection)"
 )
+
+@app.on_event("startup")
+def seed_default_users():
+    """Ensures primary user and demo accounts are pre-seeded on startup/redeploy."""
+    db = database.SessionLocal()
+    try:
+        # Pre-seed user account
+        user_email = "ennichirag065@gmail.com"
+        u = db.query(models.User).filter(func.lower(models.User.email) == user_email).first()
+        if not u:
+            u = models.User(
+                email=user_email,
+                password_hash=auth.hash_password("password123")
+            )
+            db.add(u)
+            db.commit()
+            db.refresh(u)
+            db.add(models.UserPreference(user_id=u.user_id, preferred_market="NSE", analysis_period="6mo"))
+            db.add(models.Watchlist(user_id=u.user_id, ticker_symbol="INFY.NS", company_name="Infosys Limited", exchange="NSE"))
+            db.add(models.Watchlist(user_id=u.user_id, ticker_symbol="RELIANCE.NS", company_name="Reliance Industries", exchange="NSE"))
+            db.commit()
+
+        # Pre-seed demo account
+        demo_email = "demo@marketai.com"
+        d = db.query(models.User).filter(func.lower(models.User.email) == demo_email).first()
+        if not d:
+            d = models.User(
+                email=demo_email,
+                password_hash=auth.hash_password("password123")
+            )
+            db.add(d)
+            db.commit()
+            db.refresh(d)
+            db.add(models.UserPreference(user_id=d.user_id, preferred_market="NSE", analysis_period="6mo"))
+            db.commit()
+    except Exception as e:
+        print("[Startup Seed] Warning:", e)
+    finally:
+        db.close()
 
 # Enable CORS so React Frontend (localhost, Vercel, or custom domain) can talk to FastAPI
 cors_origins_env = database.os.getenv("CORS_ORIGINS", "")
@@ -69,12 +109,13 @@ def home():
 
 @app.post("/api/auth/register", status_code=status.HTTP_201_CREATED, tags=["Module 1: Auth"])
 def register_user(user_data: schemas.UserRegisterSchema, db: Session = Depends(database.get_db)):
-    existing = db.query(models.User).filter(models.User.email == user_data.email).first()
+    clean_email = user_data.email.strip().lower()
+    existing = db.query(models.User).filter(func.lower(models.User.email) == clean_email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email is already registered.")
 
     new_user = models.User(
-        email=user_data.email,
+        email=clean_email,
         password_hash=auth.hash_password(user_data.password)
     )
     db.add(new_user)
@@ -90,7 +131,8 @@ def register_user(user_data: schemas.UserRegisterSchema, db: Session = Depends(d
 
 @app.post("/api/auth/login", tags=["Module 1: Auth"])
 def login_user(user_data: schemas.UserLoginSchema, db: Session = Depends(database.get_db)):
-    user = db.query(models.User).filter(models.User.email == user_data.email).first()
+    clean_email = user_data.email.strip().lower()
+    user = db.query(models.User).filter(func.lower(models.User.email) == clean_email).first()
     if not user or not auth.verify_password(user_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
@@ -104,7 +146,8 @@ def login_user(user_data: schemas.UserLoginSchema, db: Session = Depends(databas
 
 @app.post("/api/auth/reset-password", tags=["Module 1: Auth"])
 def reset_password(data: schemas.PasswordResetSchema, db: Session = Depends(database.get_db)):
-    user = db.query(models.User).filter(models.User.email == data.email).first()
+    clean_email = data.email.strip().lower()
+    user = db.query(models.User).filter(func.lower(models.User.email) == clean_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="No registered account found with this email.")
     if len(data.new_password) < 6:

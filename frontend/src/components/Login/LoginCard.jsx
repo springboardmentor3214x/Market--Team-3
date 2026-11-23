@@ -46,7 +46,7 @@ export default function LoginCard({ onLoginSuccess, onOpenRegister, onOpenForgot
     setAuthSuccess(false);
 
     // Frontend validations
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) {
       setAuthError("Email address cannot be empty.");
       return;

@@ -16,7 +16,7 @@ export default function RegisterModal({ isOpen, onClose, onRegisterSuccess, onLo
     e.preventDefault();
     setErrorMsg("");
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !password) {
       setErrorMsg("Please fill in all required fields.");
       return;
