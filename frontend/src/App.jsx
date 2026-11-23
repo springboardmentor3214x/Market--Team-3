@@ -39,6 +39,7 @@ function App() {
   const [stockResult, setStockResult] = useState(null);
   const [searchError, setSearchError] = useState("");
   const [activeStatement, setActiveStatement] = useState("income_statement");
+  const historyCacheRef = useRef({});
 
   // --- Module 3: Specialized AI Agent State ---
   const [agentAnalysis, setAgentAnalysis] = useState(null);
@@ -183,6 +184,9 @@ function App() {
     try {
       const result = await searchStockData(q, m, p);
       setStockResult(result);
+      if (result?.source_metadata?.ticker && result?.ohlcv_data) {
+        historyCacheRef.current[`${result.source_metadata.ticker}-${p}`] = result.ohlcv_data;
+      }
       loadUserWorkspace(false);
 
       // Trigger Multi-Agent Research Swarm concurrently
@@ -211,12 +215,28 @@ function App() {
   };
 
   const handleRemoveFromWatchlist = async (id, ticker) => {
+    const target = id || ticker;
+    // Optimistic UI update: instantly remove from state
+    setWatchlist((prev) =>
+      prev.filter((item) => {
+        if (id && item.id === id) return false;
+        if (
+          ticker &&
+          (item.ticker_symbol?.toUpperCase() === ticker?.toUpperCase() ||
+            item.ticker_symbol?.split(".")[0]?.toUpperCase() ===
+              ticker?.split(".")[0]?.toUpperCase())
+        )
+          return false;
+        return true;
+      })
+    );
+
     try {
-      const target = id || ticker;
       await removeStockFromWatchlist(target);
       loadUserWorkspace(false);
       showToast(`Removed from your watchlist.`);
     } catch (err) {
+      loadUserWorkspace(false); // revert on error
       showToast(err.message, "error");
     }
   };
@@ -227,10 +247,22 @@ function App() {
 
     const ticker = stockResult.source_metadata.ticker;
     const exchange = stockResult.source_metadata.exchange || market;
+    const cacheKey = `${ticker}-${newPeriod}`;
+
+    // Instant switch if already cached (zero delay)
+    if (historyCacheRef.current[cacheKey]) {
+      setStockResult((prev) => ({
+        ...prev,
+        ohlcv_data: historyCacheRef.current[cacheKey],
+      }));
+      return;
+    }
+
     setChartLoading(true);
     try {
       const historyData = await fetchStockHistory(ticker, newPeriod, exchange);
       if (historyData && historyData.records) {
+        historyCacheRef.current[cacheKey] = historyData.records;
         setStockResult((prev) => ({
           ...prev,
           ohlcv_data: historyData.records,

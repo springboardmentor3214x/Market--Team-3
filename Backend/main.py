@@ -165,16 +165,26 @@ def add_to_watchlist(
     db.commit()
     return {"message": f"{item.company_name} added to watchlist.", "id": new_stock.id}
 
-@app.delete("/api/user/watchlist/{item_id}", tags=["Module 1: Workspace"])
-def remove_from_watchlist(
-    item_id: int,
+@app.delete("/api/user/watchlist", tags=["Module 1: Workspace"])
+def remove_from_watchlist_query(
+    ticker: Optional[str] = Query(None),
+    id: Optional[int] = Query(None),
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    entry = db.query(models.Watchlist).filter(
-        models.Watchlist.id == item_id,
-        models.Watchlist.user_id == current_user.user_id
-    ).first()
+    entry = None
+    if id is not None:
+        entry = db.query(models.Watchlist).filter(
+            models.Watchlist.id == id,
+            models.Watchlist.user_id == current_user.user_id
+        ).first()
+    if not entry and ticker:
+        ticker_upper = ticker.strip().upper()
+        base_ticker = ticker_upper.split(".")[0]
+        entry = db.query(models.Watchlist).filter(
+            models.Watchlist.user_id == current_user.user_id,
+            (models.Watchlist.ticker_symbol == ticker_upper) | (models.Watchlist.ticker_symbol.like(f"{base_ticker}%"))
+        ).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Watchlist item not found.")
     company = entry.company_name
@@ -182,18 +192,36 @@ def remove_from_watchlist(
     db.commit()
     return {"message": f"{company} removed from watchlist."}
 
-@app.delete("/api/user/watchlist/ticker/{ticker}", tags=["Module 1: Workspace"])
-def remove_from_watchlist_by_ticker(
-    ticker: str,
+@app.delete("/api/user/watchlist/{identifier:path}", tags=["Module 1: Workspace"])
+def remove_from_watchlist_any(
+    identifier: str,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    # Match both exact ticker and base ticker without exchange suffix (e.g. INFY vs INFY.NS)
-    base_ticker = ticker.split(".")[0].upper()
-    entry = db.query(models.Watchlist).filter(
-        models.Watchlist.user_id == current_user.user_id,
-        (models.Watchlist.ticker_symbol == ticker.upper()) | (models.Watchlist.ticker_symbol.like(f"{base_ticker}%"))
-    ).first()
+    # Strip any leading route path prefixes (e.g. 'ticker/', 'by-ticker/')
+    target = identifier.strip()
+    if target.startswith("ticker/"):
+        target = target[len("ticker/"):]
+    elif target.startswith("by-ticker/"):
+        target = target[len("by-ticker/"):]
+
+    entry = None
+    # Check if target is an integer ID
+    if target.isdigit():
+        entry = db.query(models.Watchlist).filter(
+            models.Watchlist.id == int(target),
+            models.Watchlist.user_id == current_user.user_id
+        ).first()
+
+    # If not found by ID, look up by ticker symbol
+    if not entry:
+        ticker_upper = target.upper()
+        base_ticker = ticker_upper.split(".")[0]
+        entry = db.query(models.Watchlist).filter(
+            models.Watchlist.user_id == current_user.user_id,
+            (models.Watchlist.ticker_symbol == ticker_upper) | (models.Watchlist.ticker_symbol.like(f"{base_ticker}%"))
+        ).first()
+
     if not entry:
         raise HTTPException(status_code=404, detail="Watchlist item not found.")
     company = entry.company_name

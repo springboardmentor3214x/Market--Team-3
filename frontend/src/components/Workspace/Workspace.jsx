@@ -382,11 +382,16 @@ export default function Workspace({
                       {isSavedInWatchlist ? (
                         <motion.button
                           className="ws-btn-outline ws-btn-watchlist in-watchlist"
-                          onClick={() =>
-                            onRemoveFromWatchlist
-                              ? onRemoveFromWatchlist(null, currentTicker)
-                              : null
-                          }
+                          onClick={() => {
+                            if (onRemoveFromWatchlist) {
+                              const match = watchlist?.find(
+                                (item) =>
+                                  item.ticker_symbol?.toUpperCase() === currentTicker?.toUpperCase() ||
+                                  item.ticker_symbol?.split(".")[0]?.toUpperCase() === currentTicker?.split(".")[0]?.toUpperCase()
+                              );
+                              onRemoveFromWatchlist(match?.id, currentTicker);
+                            }
+                          }}
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.97 }}
                           title="Click to remove from favorites"
