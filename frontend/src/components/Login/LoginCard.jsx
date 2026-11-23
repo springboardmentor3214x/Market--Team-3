@@ -92,7 +92,7 @@ export default function LoginCard({ onLoginSuccess, onOpenRegister, onOpenForgot
       let errorMessage = err.message || "Authentication failed.";
       if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
         errorMessage =
-          "Backend server is offline or unreachable at http://127.0.0.1:8000. Please ensure FastAPI is running.";
+          "Backend server is offline or unreachable. Please ensure the backend is running.";
       }
       setAuthError(errorMessage);
     } finally {

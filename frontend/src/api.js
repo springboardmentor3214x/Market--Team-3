@@ -2,7 +2,7 @@
  * API Service Layer (Connects React Frontend to FastAPI Backend)
  * Automatically attaches JWT Bearer token for protected endpoints.
  */
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("jwt_token");
@@ -29,7 +29,7 @@ export const registerUser = async (email, password) => {
   } catch (err) {
     if (err.message && err.message.includes("Failed to fetch")) {
       throw new Error(
-        "Unable to connect to backend at http://127.0.0.1:8000. Please ensure the FastAPI server is running."
+        `Unable to connect to backend (${API_BASE_URL}). Please ensure the server is online.`
       );
     }
     throw err;
@@ -49,7 +49,7 @@ export const loginUser = async (email, password) => {
   } catch (err) {
     if (err.message && err.message.includes("Failed to fetch")) {
       throw new Error(
-        "Unable to connect to backend at http://127.0.0.1:8000. Please ensure the FastAPI server is running."
+        `Unable to connect to backend (${API_BASE_URL}). Please ensure the server is online.`
       );
     }
     throw err;
