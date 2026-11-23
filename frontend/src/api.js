@@ -2,7 +2,7 @@
  * API Service Layer (Connects React Frontend to FastAPI Backend)
  * Automatically attaches JWT Bearer token for protected endpoints.
  */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("jwt_token");
