@@ -7,6 +7,7 @@ Integrates:
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+import re
 import models, database, schemas, auth, market_service
 from agents import agent_orchestrator
 
@@ -39,6 +40,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class CleanPathMiddleware:
+    """Normalize double slashes (e.g. //api/...) from frontend URLs to /api/..."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            scope["path"] = re.sub(r"/+", "/", scope["path"])
+            if "raw_path" in scope:
+                scope["raw_path"] = re.sub(rb"/+", b"/", scope["raw_path"])
+        await self.app(scope, receive, send)
+
+app.add_middleware(CleanPathMiddleware)
 
 # ROOT WELCOME ROUTE (app banne ke baad yahan aayega)
 @app.get("/")
