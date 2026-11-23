@@ -8,7 +8,9 @@ import {
   fetchWorkspace,
   savePreferences,
   addStockToWatchlist,
+  removeStockFromWatchlist,
   searchStockData,
+  fetchStockHistory,
   fetchMultiAgentAnalysis,
 } from "./api";
 import "./App.css";
@@ -33,6 +35,7 @@ function App() {
   // --- Market Data State ---
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [chartLoading, setChartLoading] = useState(false);
   const [stockResult, setStockResult] = useState(null);
   const [searchError, setSearchError] = useState("");
   const [activeStatement, setActiveStatement] = useState("income_statement");
@@ -207,6 +210,40 @@ function App() {
     }
   };
 
+  const handleRemoveFromWatchlist = async (id, ticker) => {
+    try {
+      const target = id || ticker;
+      await removeStockFromWatchlist(target);
+      loadUserWorkspace(false);
+      showToast(`Removed from your watchlist.`);
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleFastPeriodChange = async (newPeriod) => {
+    setPeriod(newPeriod);
+    if (!stockResult?.source_metadata?.ticker) return;
+
+    const ticker = stockResult.source_metadata.ticker;
+    const exchange = stockResult.source_metadata.exchange || market;
+    setChartLoading(true);
+    try {
+      const historyData = await fetchStockHistory(ticker, newPeriod, exchange);
+      if (historyData && historyData.records) {
+        setStockResult((prev) => ({
+          ...prev,
+          ohlcv_data: historyData.records,
+          validation_summary: historyData.validation_summary || prev.validation_summary,
+        }));
+      }
+    } catch (err) {
+      showToast("Chart update failed: " + err.message, "error");
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
   // ==========================================
   // CINEMATIC CROSSFADE — zero jump, zero glitch
   // Login overlays fixed & fades/blurs out while Workspace reveals smoothly
@@ -260,6 +297,9 @@ function App() {
               stockResult={stockResult}
               searchError={searchError}
               onAddToWatchlist={handleAddToWatchlist}
+              onRemoveFromWatchlist={handleRemoveFromWatchlist}
+              chartLoading={chartLoading}
+              onFastPeriodChange={handleFastPeriodChange}
               activeStatement={activeStatement}
               setActiveStatement={setActiveStatement}
               agentAnalysis={agentAnalysis}

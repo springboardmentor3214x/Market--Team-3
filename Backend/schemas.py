@@ -17,6 +17,10 @@ class UserLoginSchema(BaseModel):
     email: EmailStr
     password: str
 
+class PasswordResetSchema(BaseModel):
+    email: EmailStr
+    new_password: str
+
 class PreferenceUpdateSchema(BaseModel):
     preferred_market: str = "NSE"
     analysis_period: str = "6mo"

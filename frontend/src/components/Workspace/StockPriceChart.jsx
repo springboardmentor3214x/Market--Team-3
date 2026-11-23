@@ -25,6 +25,7 @@ export default function StockPriceChart({
   activePeriod = "6mo",
   onPeriodChange,
   loading = false,
+  chartLoading = false,
 }) {
   const [chartMode, setChartMode] = useState("area"); // 'area' | 'line'
 
@@ -127,7 +128,13 @@ export default function StockPriceChart({
       </div>
 
       {/* Main Chart Container */}
-      <div className="ws-chart-wrapper" style={{ width: "100%", height: 320 }}>
+      <div className="ws-chart-wrapper" style={{ width: "100%", height: 320, position: "relative" }}>
+        {chartLoading && (
+          <div className="ws-chart-loading-overlay">
+            <div className="ws-chart-spinner" />
+            <span className="ws-chart-loading-text">Updating Chart Data ({activePeriod.toUpperCase()})...</span>
+          </div>
+        )}
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={ohlcvData}
@@ -175,7 +182,7 @@ export default function StockPriceChart({
               fill="rgba(0, 229, 255, 0.22)"
               radius={[2, 2, 0, 0]}
               isAnimationActive={true}
-              animationDuration={900}
+              animationDuration={350}
               animationEasing="ease-out"
             />
             {/* Price Area */}
@@ -188,7 +195,7 @@ export default function StockPriceChart({
               fillOpacity={1}
               fill="url(#priceGradient)"
               isAnimationActive={true}
-              animationDuration={1200}
+              animationDuration={350}
               animationEasing="ease-out"
             />
           </ComposedChart>

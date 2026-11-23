@@ -56,6 +56,26 @@ export const loginUser = async (email, password) => {
   }
 };
 
+export const resetPassword = async (email, new_password) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, new_password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Password reset failed");
+    return data;
+  } catch (err) {
+    if (err.message && err.message.includes("Failed to fetch")) {
+      throw new Error(
+        `Unable to connect to backend (${API_BASE_URL}). Please ensure the server is online.`
+      );
+    }
+    throw err;
+  }
+};
+
 export const fetchWorkspace = async () => {
   const res = await fetch(`${API_BASE_URL}/api/user/workspace`, {
     headers: getAuthHeaders(),
@@ -84,6 +104,20 @@ export const addStockToWatchlist = async (ticker_symbol, company_name, exchange)
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || "Failed to add to watchlist");
+  return data;
+};
+
+export const removeStockFromWatchlist = async (idOrTicker) => {
+  const isId = typeof idOrTicker === "number" || /^\d+$/.test(idOrTicker);
+  const endpoint = isId
+    ? `${API_BASE_URL}/api/user/watchlist/${idOrTicker}`
+    : `${API_BASE_URL}/api/user/watchlist/ticker/${encodeURIComponent(idOrTicker)}`;
+  const res = await fetch(endpoint, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to remove from watchlist");
   return data;
 };
 

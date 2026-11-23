@@ -7,6 +7,7 @@ import FinancialStatementsView from "./FinancialStatementsView";
 import AIAgentCards from "./AIAgentCards";
 import AnimatedCounter from "./AnimatedCounter";
 import TiltCard from "./TiltCard";
+import CustomSelect from "./CustomSelect";
 import {
   TrendingUp,
   Cpu,
@@ -20,6 +21,8 @@ import {
   ExternalLink,
   Zap,
   Info,
+  Trash2,
+  Check,
 } from "lucide-react";
 import "./Workspace.css";
 
@@ -40,11 +43,21 @@ export default function Workspace({
   stockResult,
   searchError,
   onAddToWatchlist,
+  onRemoveFromWatchlist,
   agentAnalysis,
   agentLoading,
   onRunAgentAnalysis,
+  chartLoading = false,
+  onFastPeriodChange,
 }) {
   const [descExpanded, setDescExpanded] = useState(false);
+
+  const currentTicker = stockResult?.source_metadata?.ticker;
+  const isSavedInWatchlist = watchlist?.some(
+    (item) =>
+      item.ticker_symbol?.toUpperCase() === currentTicker?.toUpperCase() ||
+      item.ticker_symbol?.split(".")[0]?.toUpperCase() === currentTicker?.split(".")[0]?.toUpperCase()
+  );
 
   const formatDescription = (text, expanded) => {
     if (!text) return "";
@@ -55,7 +68,9 @@ export default function Workspace({
 
   const handlePeriodChange = (newPeriod) => {
     setPeriod(newPeriod);
-    if (stockResult?.source_metadata?.ticker) {
+    if (onFastPeriodChange) {
+      onFastPeriodChange(newPeriod);
+    } else if (stockResult?.source_metadata?.ticker) {
       onStockSearch(null, stockResult.source_metadata.ticker, stockResult.source_metadata.exchange, newPeriod);
     }
   };
@@ -158,31 +173,31 @@ export default function Workspace({
 
               <div className="ws-form-group">
                 <label className="ws-form-label">Default Target Market</label>
-                <select
-                  className="ws-select"
+                <CustomSelect
                   value={market}
-                  onChange={(e) => setMarket(e.target.value)}
-                >
-                  <option value="NSE">NSE (India - INR)</option>
-                  <option value="BSE">BSE (India - INR)</option>
-                  <option value="NYSE">NYSE (US - USD)</option>
-                  <option value="NASDAQ">NASDAQ (US - USD)</option>
-                </select>
+                  onChange={(val) => setMarket(val)}
+                  options={[
+                    { value: "NSE", label: "NSE (India - INR)", sublabel: "National Stock Exchange of India" },
+                    { value: "BSE", label: "BSE (India - INR)", sublabel: "Bombay Stock Exchange" },
+                    { value: "NYSE", label: "NYSE (US - USD)", sublabel: "New York Stock Exchange" },
+                    { value: "NASDAQ", label: "NASDAQ (US - USD)", sublabel: "National Association of Securities Dealers" },
+                  ]}
+                />
               </div>
 
               <div className="ws-form-group">
                 <label className="ws-form-label">Analysis Period</label>
-                <select
-                  className="ws-select"
+                <CustomSelect
                   value={period}
-                  onChange={(e) => handlePeriodChange(e.target.value)}
-                >
-                  <option value="1mo">1 Month</option>
-                  <option value="3mo">3 Months</option>
-                  <option value="6mo">6 Months</option>
-                  <option value="1y">1 Year</option>
-                  <option value="5y">5 Years</option>
-                </select>
+                  onChange={(val) => handlePeriodChange(val)}
+                  options={[
+                    { value: "1mo", label: "1 Month", sublabel: "Short-term swing analysis" },
+                    { value: "3mo", label: "3 Months", sublabel: "Quarterly performance trend" },
+                    { value: "6mo", label: "6 Months", sublabel: "Standard semi-annual view" },
+                    { value: "1y", label: "1 Year", sublabel: "Annual historical pattern" },
+                    { value: "5y", label: "5 Years", sublabel: "Macro cyclical long-term" },
+                  ]}
+                />
               </div>
 
               <motion.button
@@ -230,7 +245,22 @@ export default function Workspace({
                         <div className="ws-list-dot" />
                         <span className="ws-list-name">{item.company_name}</span>
                       </div>
-                      <span className="ws-list-ticker">{item.ticker_symbol}</span>
+                      <div className="ws-list-right">
+                        <span className="ws-list-ticker">{item.ticker_symbol}</span>
+                        <button
+                          type="button"
+                          className="ws-watchlist-del-btn"
+                          title="Remove from favorites"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onRemoveFromWatchlist) {
+                              onRemoveFromWatchlist(item.id, item.ticker_symbol);
+                            }
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
@@ -349,15 +379,32 @@ export default function Workspace({
                         </p>
                       </div>
 
-                      <motion.button
-                        className="ws-btn-outline"
-                        onClick={onAddToWatchlist}
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.96 }}
-                      >
-                        <Bookmark size={14} />
-                        <span>+ Add to Watchlist</span>
-                      </motion.button>
+                      {isSavedInWatchlist ? (
+                        <motion.button
+                          className="ws-btn-outline ws-btn-watchlist in-watchlist"
+                          onClick={() =>
+                            onRemoveFromWatchlist
+                              ? onRemoveFromWatchlist(null, currentTicker)
+                              : null
+                          }
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          title="Click to remove from favorites"
+                        >
+                          <Check size={14} color="#00ff87" />
+                          <span>Saved in Watchlist (Remove)</span>
+                        </motion.button>
+                      ) : (
+                        <motion.button
+                          className="ws-btn-outline"
+                          onClick={onAddToWatchlist}
+                          whileHover={{ scale: 1.04 }}
+                          whileTap={{ scale: 0.96 }}
+                        >
+                          <Bookmark size={14} />
+                          <span>+ Add to Watchlist</span>
+                        </motion.button>
+                      )}
                     </div>
 
                     {/* Key Corporate Metrics Badges (Requirement 6) */}
@@ -442,6 +489,7 @@ export default function Workspace({
                       activePeriod={period}
                       onPeriodChange={handlePeriodChange}
                       loading={loading}
+                      chartLoading={chartLoading}
                     />
                   </motion.div>
 

@@ -1587,3 +1587,201 @@
     padding: 12px 18px;
   }
 }
+
+/* ==========================================================================
+   CUSTOM SELECT DROPDOWN (Cyberpunk Glassmorphism)
+   ========================================================================== */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+  font-family: var(--ws-font-sans);
+}
+
+.custom-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: rgba(8, 14, 22, 0.85);
+  border: 1px solid var(--ws-border-glass-subtle);
+  color: var(--ws-text-primary);
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.custom-select-trigger:hover,
+.custom-select-trigger.open {
+  border-color: var(--ws-accent-green);
+  box-shadow: 0 0 16px rgba(0, 255, 135, 0.22);
+  background: rgba(11, 20, 32, 0.95);
+}
+
+.custom-select-value {
+  font-weight: 500;
+  color: #f1f5f9;
+  letter-spacing: 0.2px;
+}
+
+.custom-select-arrow {
+  color: var(--ws-accent-green);
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  border-radius: 10px;
+  background: rgba(10, 16, 26, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 255, 135, 0.32);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 24px rgba(0, 255, 135, 0.15);
+  overflow: hidden;
+  padding: 6px;
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.custom-select-option:hover {
+  background: rgba(0, 255, 135, 0.1);
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+.custom-select-option.selected {
+  background: rgba(0, 255, 135, 0.16);
+  color: #00ff87;
+  font-weight: 600;
+}
+
+.custom-select-option-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-select-option-label {
+  font-weight: 600;
+}
+
+.custom-select-option-sublabel {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.custom-select-option-check {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+}
+
+/* ==========================================================================
+   WATCHLIST REMOVE BUTTON & IN-WATCHLIST TOGGLE
+   ========================================================================== */
+.ws-list-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-watchlist-del-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.ws-list-item:hover .ws-watchlist-del-btn {
+  opacity: 1;
+}
+
+.ws-watchlist-del-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  transform: scale(1.1);
+}
+
+.ws-btn-watchlist.in-watchlist {
+  background: rgba(0, 255, 135, 0.12);
+  border-color: rgba(0, 255, 135, 0.4);
+  color: #00ff87;
+}
+
+.ws-btn-watchlist.in-watchlist:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+/* ==========================================================================
+   SMOOTH CHART PERIOD LOADING OVERLAY
+   ========================================================================== */
+.ws-chart-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(5, 8, 14, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 10;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.ws-chart-spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 255, 135, 0.2);
+  border-top-color: #00ff87;
+  animation: ws-spin 0.65s linear infinite;
+}
+
+.ws-chart-loading-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00ff87;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(0, 255, 135, 0.4);
+}
+
+@keyframes ws-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

@@ -102,6 +102,17 @@ def login_user(user_data: schemas.UserLoginSchema, db: Session = Depends(databas
         "email": user.email
     }
 
+@app.post("/api/auth/reset-password", tags=["Module 1: Auth"])
+def reset_password(data: schemas.PasswordResetSchema, db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.email == data.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No registered account found with this email.")
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+    user.password_hash = auth.hash_password(data.new_password)
+    db.commit()
+    return {"message": "Password reset successfully. You can now log in with your new password."}
+
 @app.get("/api/user/workspace", tags=["Module 1: Workspace"])
 def get_user_workspace(
     current_user: models.User = Depends(auth.get_current_user),
@@ -152,7 +163,43 @@ def add_to_watchlist(
     )
     db.add(new_stock)
     db.commit()
-    return {"message": f"{item.company_name} added to watchlist."}
+    return {"message": f"{item.company_name} added to watchlist.", "id": new_stock.id}
+
+@app.delete("/api/user/watchlist/{item_id}", tags=["Module 1: Workspace"])
+def remove_from_watchlist(
+    item_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    entry = db.query(models.Watchlist).filter(
+        models.Watchlist.id == item_id,
+        models.Watchlist.user_id == current_user.user_id
+    ).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Watchlist item not found.")
+    company = entry.company_name
+    db.delete(entry)
+    db.commit()
+    return {"message": f"{company} removed from watchlist."}
+
+@app.delete("/api/user/watchlist/ticker/{ticker}", tags=["Module 1: Workspace"])
+def remove_from_watchlist_by_ticker(
+    ticker: str,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    # Match both exact ticker and base ticker without exchange suffix (e.g. INFY vs INFY.NS)
+    base_ticker = ticker.split(".")[0].upper()
+    entry = db.query(models.Watchlist).filter(
+        models.Watchlist.user_id == current_user.user_id,
+        (models.Watchlist.ticker_symbol == ticker.upper()) | (models.Watchlist.ticker_symbol.like(f"{base_ticker}%"))
+    ).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Watchlist item not found.")
+    company = entry.company_name
+    db.delete(entry)
+    db.commit()
+    return {"message": f"{company} removed from watchlist."}
 
 # ==========================================
 # MODULE 2: STOCK SEARCH & MARKET DATA APIS

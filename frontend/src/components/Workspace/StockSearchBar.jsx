@@ -2,15 +2,36 @@ import React, { useState, useEffect, useRef } from "react";
 import { Search, Zap, X, ChevronRight, Globe, AlertCircle } from "lucide-react";
 import { searchStocksAutocomplete } from "../../api";
 
-const QUICK_STOCKS = [
-  { ticker: "INFY.NS", label: "Infosys", exchange: "NSE" },
-  { ticker: "RELIANCE.NS", label: "Reliance", exchange: "NSE" },
-  { ticker: "TCS.NS", label: "TCS", exchange: "NSE" },
-  { ticker: "AAPL", label: "Apple", exchange: "NASDAQ" },
-  { ticker: "NVDA", label: "NVIDIA", exchange: "NASDAQ" },
-  { ticker: "TSLA", label: "Tesla", exchange: "NASDAQ" },
-  { ticker: "MSFT", label: "Microsoft", exchange: "NASDAQ" },
-];
+const MARKET_STOCKS = {
+  NSE: [
+    { ticker: "INFY.NS", label: "Infosys", exchange: "NSE" },
+    { ticker: "RELIANCE.NS", label: "Reliance", exchange: "NSE" },
+    { ticker: "TCS.NS", label: "TCS", exchange: "NSE" },
+    { ticker: "HDFCBANK.NS", label: "HDFC Bank", exchange: "NSE" },
+    { ticker: "TATAMOTORS.NS", label: "Tata Motors", exchange: "NSE" },
+  ],
+  BSE: [
+    { ticker: "INFY.BO", label: "Infosys", exchange: "BSE" },
+    { ticker: "RELIANCE.BO", label: "Reliance", exchange: "BSE" },
+    { ticker: "TCS.BO", label: "TCS", exchange: "BSE" },
+    { ticker: "ITC.BO", label: "ITC", exchange: "BSE" },
+    { ticker: "SBIN.BO", label: "SBI", exchange: "BSE" },
+  ],
+  NASDAQ: [
+    { ticker: "AAPL", label: "Apple", exchange: "NASDAQ" },
+    { ticker: "NVDA", label: "NVIDIA", exchange: "NASDAQ" },
+    { ticker: "TSLA", label: "Tesla", exchange: "NASDAQ" },
+    { ticker: "MSFT", label: "Microsoft", exchange: "NASDAQ" },
+    { ticker: "GOOGL", label: "Google", exchange: "NASDAQ" },
+  ],
+  NYSE: [
+    { ticker: "BRK-B", label: "Berkshire", exchange: "NYSE" },
+    { ticker: "JPM", label: "JPMorgan", exchange: "NYSE" },
+    { ticker: "V", label: "Visa", exchange: "NYSE" },
+    { ticker: "WMT", label: "Walmart", exchange: "NYSE" },
+    { ticker: "DIS", label: "Disney", exchange: "NYSE" },
+  ],
+};
 
 export default function StockSearchBar({
   searchQuery,
@@ -94,7 +115,13 @@ export default function StockSearchBar({
               key={m}
               type="button"
               className={`ws-market-tab ${market === m ? "active" : ""}`}
-              onClick={() => setMarket(m)}
+              onClick={() => {
+                setMarket(m);
+                if (searchQuery.trim()) {
+                  const cleanTicker = searchQuery.trim().replace(/\.(NS|BO|O|N)$/i, "");
+                  onSearch(null, cleanTicker, m);
+                }
+              }}
             >
               {m}
             </button>
@@ -180,8 +207,8 @@ export default function StockSearchBar({
 
       {/* Quick Alpha Ticker Badges */}
       <div className="ws-suggestions-row">
-        <span className="ws-suggestion-label">Quick Alpha:</span>
-        {QUICK_STOCKS.map((item) => (
+        <span className="ws-suggestion-label">Quick Alpha ({market}):</span>
+        {(MARKET_STOCKS[market] || MARKET_STOCKS.NSE).map((item) => (
           <button
             key={item.ticker}
             type="button"
