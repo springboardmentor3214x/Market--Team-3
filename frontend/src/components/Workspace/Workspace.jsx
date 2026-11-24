@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import WorkspaceScene3D from "./WorkspaceScene3D";
-import MarketIntelligence3DCore from "./MarketIntelligence3DCore";
+import Scroll3DMotionBox from "./Scroll3DMotionBox";
 import StockSearchBar from "./StockSearchBar";
 import StockPriceChart from "./StockPriceChart";
 import FinancialStatementsView from "./FinancialStatementsView";
@@ -326,9 +326,6 @@ export default function Workspace({
               searchError={searchError}
             />
 
-            {/* 2. Interactive 3D Multi-Agent Motion Stage (Scroll-Driven Decomposition) */}
-            <MarketIntelligence3DCore />
-
             {/* AI Agent Swarm Architecture (Requirement 5) */}
             {!stockResult && (
               <motion.div
@@ -486,12 +483,7 @@ export default function Workspace({
                   </motion.div>
 
                   {/* 3. Interactive Recharts Price & Volume Chart (Requirement 1 & 4) */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 28 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.12 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  >
+                  <Scroll3DMotionBox tag="3D MOMENTUM // RECHARTS OHLCV">
                     <StockPriceChart
                       ohlcvData={stockResult.ohlcv_data}
                       currency={stockResult.source_metadata.currency}
@@ -500,7 +492,7 @@ export default function Workspace({
                       loading={loading}
                       chartLoading={chartLoading}
                     />
-                  </motion.div>
+                  </Scroll3DMotionBox>
 
                   {/* Multi-Agent Swarm Section (Requirement 5) */}
                   <AIAgentCards
@@ -518,147 +510,134 @@ export default function Workspace({
                   />
 
                   {/* 4. Data Validation & Quality Summary Card (Requirement 8) */}
-                  <motion.div
-                    className="ws-glass-card"
-                    initial={{ opacity: 0, y: 28 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.15 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  >
-                    <div className="ws-card-header">
-                      <div className="ws-card-title">
-                        <ShieldCheck size={16} className="ws-card-title-icon" />
-                        <span>Data Quality & Validation Audit</span>
-                      </div>
-                      <span
-                        className={`ws-count-badge ${
-                          stockResult.validation_summary.status === "PASS" ? "status-pass" : ""
-                        }`}
-                      >
-                        Status: {stockResult.validation_summary.status}
-                      </span>
-                    </div>
-
-                    <div className="ws-stats-grid">
-                      <div className="ws-stat-card">
-                        <span className="ws-stat-label">Initial Downloaded</span>
-                        <span className="ws-stat-val">
-                          <AnimatedCounter value={stockResult.validation_summary.initial_records} />
+                  <Scroll3DMotionBox tag="3D AUDIT // DATA QUALITY">
+                    <div className="ws-glass-card">
+                      <div className="ws-card-header">
+                        <div className="ws-card-title">
+                          <ShieldCheck size={16} className="ws-card-title-icon" />
+                          <span>Data Quality & Validation Audit</span>
+                        </div>
+                        <span
+                          className={`ws-count-badge ${
+                            stockResult.validation_summary.status === "PASS" ? "status-pass" : ""
+                          }`}
+                        >
+                          Status: {stockResult.validation_summary.status}
                         </span>
                       </div>
 
-                      <div className="ws-stat-card">
-                        <span className="ws-stat-label">Valid OHLCV Records</span>
-                        <span className="ws-stat-val positive">
-                          <AnimatedCounter value={stockResult.validation_summary.valid_records_returned} />
-                        </span>
-                      </div>
+                      <div className="ws-stats-grid">
+                        <div className="ws-stat-card">
+                          <span className="ws-stat-label">Initial Downloaded</span>
+                          <span className="ws-stat-val">
+                            <AnimatedCounter value={stockResult.validation_summary.initial_records} />
+                          </span>
+                        </div>
 
-                      <div className="ws-stat-card">
-                        <span className="ws-stat-label">Duplicate Dates Filtered</span>
-                        <span className="ws-stat-val">
-                          <AnimatedCounter value={stockResult.validation_summary.duplicates_removed} />
-                        </span>
-                      </div>
+                        <div className="ws-stat-card">
+                          <span className="ws-stat-label">Valid OHLCV Records</span>
+                          <span className="ws-stat-val positive">
+                            <AnimatedCounter value={stockResult.validation_summary.valid_records_returned} />
+                          </span>
+                        </div>
 
-                      <div className="ws-stat-card">
-                        <span className="ws-stat-label">Invalid Dates Dropped</span>
-                        <span className="ws-stat-val">
-                          <AnimatedCounter value={stockResult.validation_summary.invalid_dates_dropped || 0} />
-                        </span>
-                      </div>
+                        <div className="ws-stat-card">
+                          <span className="ws-stat-label">Duplicate Dates Filtered</span>
+                          <span className="ws-stat-val">
+                            <AnimatedCounter value={stockResult.validation_summary.duplicates_removed} />
+                          </span>
+                        </div>
 
-                      <div className="ws-stat-card">
-                        <span className="ws-stat-label">Missing Values Detected</span>
-                        <span className="ws-stat-val">
-                          <AnimatedCounter
-                            value={
-                              stockResult.validation_summary.missing_values_detected ||
-                              stockResult.validation_summary.missing_values_filled ||
-                              0
-                            }
-                          />
-                        </span>
-                      </div>
+                        <div className="ws-stat-card">
+                          <span className="ws-stat-label">Invalid Dates Dropped</span>
+                          <span className="ws-stat-val">
+                            <AnimatedCounter value={stockResult.validation_summary.invalid_dates_dropped || 0} />
+                          </span>
+                        </div>
 
-                      <div className="ws-stat-card">
-                        <span className="ws-stat-label">Inconsistent Prices Dropped</span>
-                        <span className="ws-stat-val">
-                          <AnimatedCounter value={stockResult.validation_summary.inconsistent_rows_dropped} />
-                        </span>
+                        <div className="ws-stat-card">
+                          <span className="ws-stat-label">Missing Values Detected</span>
+                          <span className="ws-stat-val">
+                            <AnimatedCounter
+                              value={
+                                stockResult.validation_summary.missing_values_detected ||
+                                stockResult.validation_summary.missing_values_filled ||
+                                0
+                              }
+                            />
+                          </span>
+                        </div>
+
+                        <div className="ws-stat-card">
+                          <span className="ws-stat-label">Inconsistent Prices Dropped</span>
+                          <span className="ws-stat-val">
+                            <AnimatedCounter value={stockResult.validation_summary.inconsistent_rows_dropped} />
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </Scroll3DMotionBox>
 
                   {/* 5. Historical OHLCV Data Table (Requirement 5) */}
-                  <motion.div
-                    className="ws-glass-card"
-                    initial={{ opacity: 0, y: 28 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.12 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  >
-                    <div className="ws-card-header">
-                      <div className="ws-card-title">
-                        <BarChart2 size={16} className="ws-card-title-icon" />
-                        <span>
-                          Structured OHLCV Historical Prices ({stockResult.source_metadata.currency})
+                  <Scroll3DMotionBox tag="3D DATA STREAM // STRUCTURED OHLCV">
+                    <div className="ws-glass-card">
+                      <div className="ws-card-header">
+                        <div className="ws-card-title">
+                          <BarChart2 size={16} className="ws-card-title-icon" />
+                          <span>
+                            Structured OHLCV Historical Prices ({stockResult.source_metadata.currency})
+                          </span>
+                        </div>
+                        <span className="ws-count-badge">
+                          <AnimatedCounter value={stockResult.ohlcv_data.length} /> Trading Days
                         </span>
                       </div>
-                      <span className="ws-count-badge">
-                        <AnimatedCounter value={stockResult.ohlcv_data.length} /> Trading Days
-                      </span>
-                    </div>
 
-                    <div className="ws-table-container">
-                      <table className="ws-table">
-                        <thead>
-                          <tr>
-                            <th>Trading Date</th>
-                            <th>Open</th>
-                            <th>High</th>
-                            <th>Low</th>
-                            <th>Close</th>
-                            <th>Adj Close</th>
-                            <th>Volume</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {stockResult.ohlcv_data
-                            .slice()
-                            .reverse()
-                            .slice(0, 30)
-                            .map((row, idx) => (
-                              <tr key={idx}>
-                                <td>{row.trading_date}</td>
-                                <td>{Number(row.Open).toFixed(2)}</td>
-                                <td>{Number(row.High).toFixed(2)}</td>
-                                <td>{Number(row.Low).toFixed(2)}</td>
-                                <td className="highlight-price">
-                                  {Number(row.Close).toFixed(2)}
-                                </td>
-                                <td>{row["Adj Close"] ? Number(row["Adj Close"]).toFixed(2) : "-"}</td>
-                                <td>{Number(row.Volume).toLocaleString()}</td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
+                      <div className="ws-table-container">
+                        <table className="ws-table">
+                          <thead>
+                            <tr>
+                              <th>Trading Date</th>
+                              <th>Open</th>
+                              <th>High</th>
+                              <th>Low</th>
+                              <th>Close</th>
+                              <th>Adj Close</th>
+                              <th>Volume</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {stockResult.ohlcv_data
+                              .slice()
+                              .reverse()
+                              .slice(0, 30)
+                              .map((row, idx) => (
+                                <tr key={idx}>
+                                  <td>{row.trading_date}</td>
+                                  <td>{Number(row.Open).toFixed(2)}</td>
+                                  <td>{Number(row.High).toFixed(2)}</td>
+                                  <td>{Number(row.Low).toFixed(2)}</td>
+                                  <td className="highlight-price">
+                                    {Number(row.Close).toFixed(2)}
+                                  </td>
+                                  <td>{row["Adj Close"] ? Number(row["Adj Close"]).toFixed(2) : "-"}</td>
+                                  <td>{Number(row.Volume).toLocaleString()}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </motion.div>
+                  </Scroll3DMotionBox>
 
                   {/* 6. Corporate Financial Statements (Annual & Quarterly) (Requirement 7) */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 28 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.12 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  >
+                  <Scroll3DMotionBox tag="3D FINANCIAL ENGINE // STATEMENTS">
                     <FinancialStatementsView
                       financialStatements={stockResult.financial_statements}
                       ticker={stockResult.source_metadata.ticker}
                       currency={stockResult.source_metadata.currency}
                     />
-                  </motion.div>
+                  </Scroll3DMotionBox>
                 </motion.div>
               )}
             </AnimatePresence>
