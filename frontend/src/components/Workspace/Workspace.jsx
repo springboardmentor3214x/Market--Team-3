@@ -52,6 +52,7 @@ export default function Workspace({
   onFastPeriodChange,
 }) {
   const [descExpanded, setDescExpanded] = useState(false);
+  const [activeAgentId, setActiveAgentId] = useState("fundamental");
 
   const currentTicker = stockResult?.source_metadata?.ticker;
   const isSavedInWatchlist = watchlist?.some(
@@ -97,7 +98,7 @@ export default function Workspace({
   return (
     <div className="workspace-root">
       {/* 1. Immersive 3D Interactive WebGL Scene */}
-      <WorkspaceScene3D />
+      <WorkspaceScene3D activeAgentId={activeAgentId} />
 
       {/* 2. Ambient Radiance & Cyber Grid Overlay (Matches Login) */}
       <div className="workspace-ambient">
@@ -339,6 +340,8 @@ export default function Workspace({
                   onRunAnalysis={onRunAgentAnalysis}
                   ticker={searchQuery}
                   currency={market === "NSE" || market === "BSE" ? "INR" : "USD"}
+                  activeAgentId={activeAgentId}
+                  onSelectAgent={setActiveAgentId}
                 />
               </motion.div>
             )}
@@ -508,6 +511,8 @@ export default function Workspace({
                       }
                       ticker={stockResult.source_metadata.ticker}
                       currency={stockResult.source_metadata.currency}
+                      activeAgentId={activeAgentId}
+                      onSelectAgent={setActiveAgentId}
                     />
                   </Scroll3DMotionBox>
 
