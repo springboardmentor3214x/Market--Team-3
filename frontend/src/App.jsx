@@ -40,6 +40,7 @@ function App() {
   const [searchError, setSearchError] = useState("");
   const [activeStatement, setActiveStatement] = useState("income_statement");
   const historyCacheRef = useRef({});
+  const masterHistoryRef = useRef({});
 
   // --- Module 3: Specialized AI Agent State ---
   const [agentAnalysis, setAgentAnalysis] = useState(null);
@@ -186,6 +187,7 @@ function App() {
       setStockResult(result);
       if (result?.source_metadata?.ticker && result?.ohlcv_data) {
         historyCacheRef.current[`${result.source_metadata.ticker}-${p}`] = result.ohlcv_data;
+        masterHistoryRef.current[result.source_metadata.ticker] = result.ohlcv_data;
       }
       loadUserWorkspace(false);
 
@@ -249,7 +251,7 @@ function App() {
     const exchange = stockResult.source_metadata.exchange || market;
     const cacheKey = `${ticker}-${newPeriod}`;
 
-    // Instant switch if already cached (zero delay)
+    // 1. Instant switch if already cached (zero delay)
     if (historyCacheRef.current[cacheKey]) {
       setStockResult((prev) => ({
         ...prev,
@@ -258,11 +260,32 @@ function App() {
       return;
     }
 
+    // 2. Instant client-side slice from master dataset so graph updates in 0ms!
+    const masterData = masterHistoryRef.current[ticker] || stockResult.ohlcv_data;
+    if (masterData && masterData.length > 0) {
+      if (!masterHistoryRef.current[ticker] || masterData.length > masterHistoryRef.current[ticker].length) {
+        masterHistoryRef.current[ticker] = masterData;
+      }
+      const sliceCountMap = { "1mo": 22, "3mo": 65, "6mo": 130, "1y": 252, "5y": 1260 };
+      const sliceCount = sliceCountMap[newPeriod];
+      if (sliceCount && sliceCount < masterData.length) {
+        const sliced = masterData.slice(-sliceCount);
+        setStockResult((prev) => ({
+          ...prev,
+          ohlcv_data: sliced,
+        }));
+      }
+    }
+
+    // 3. Background fetch for exact exchange resolution
     setChartLoading(true);
     try {
       const historyData = await fetchStockHistory(ticker, newPeriod, exchange);
-      if (historyData && historyData.records) {
+      if (historyData && historyData.records && historyData.records.length > 0) {
         historyCacheRef.current[cacheKey] = historyData.records;
+        if (historyData.records.length > (masterHistoryRef.current[ticker]?.length || 0)) {
+          masterHistoryRef.current[ticker] = historyData.records;
+        }
         setStockResult((prev) => ({
           ...prev,
           ohlcv_data: historyData.records,
@@ -270,7 +293,7 @@ function App() {
         }));
       }
     } catch (err) {
-      showToast("Chart update failed: " + err.message, "error");
+      console.warn("Background history fetch failed, using local slice fallback:", err);
     } finally {
       setChartLoading(false);
     }

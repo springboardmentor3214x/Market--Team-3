@@ -29,6 +29,13 @@ export default function StockPriceChart({
   chartLoading = false,
 }) {
   const [chartMode, setChartMode] = useState("area"); // 'area' | 'line'
+  const [localPeriod, setLocalPeriod] = useState(activePeriod);
+
+  React.useEffect(() => {
+    if (activePeriod) {
+      setLocalPeriod(activePeriod);
+    }
+  }, [activePeriod]);
 
   if (!ohlcvData || ohlcvData.length === 0) {
     return (
@@ -115,30 +122,43 @@ export default function StockPriceChart({
         {/* Period Selector Buttons (1M, 3M, 6M, 1Y, 5Y) */}
         <div
           className="ws-period-btn-group"
-          style={{ position: "relative", zIndex: 30, pointerEvents: "auto" }}
+          style={{ position: "relative", zIndex: 40, pointerEvents: "auto" }}
         >
-          {PERIODS.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              className={`ws-period-btn ${activePeriod === p.value ? "active" : ""}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onPeriodChange) {
-                  onPeriodChange(p.value);
-                }
-              }}
-              disabled={loading}
-              style={{
-                cursor: loading ? "not-allowed" : "pointer",
-                pointerEvents: "auto",
-                position: "relative",
-                zIndex: 31,
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
+          {PERIODS.map((p) => {
+            const isBtnActive = (localPeriod || activePeriod) === p.value;
+            return (
+              <button
+                key={p.value}
+                type="button"
+                className={`ws-period-btn ${isBtnActive ? "active" : ""}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLocalPeriod(p.value);
+                  if (onPeriodChange) {
+                    onPeriodChange(p.value);
+                  }
+                }}
+                style={{
+                  cursor: "pointer",
+                  pointerEvents: "auto",
+                  position: "relative",
+                  zIndex: 41,
+                  minWidth: "38px",
+                  height: "28px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: isBtnActive ? "var(--ws-accent-green, #00ff87)" : "transparent",
+                  color: isBtnActive ? "#05080e" : "var(--ws-text-secondary, #94a3b8)",
+                  fontWeight: isBtnActive ? 800 : 600,
+                  boxShadow: isBtnActive ? "0 0 12px rgba(0, 255, 135, 0.45)" : "none",
+                }}
+              >
+                {p.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
