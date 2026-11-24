@@ -2,7 +2,7 @@
  * API Service Layer (Connects React Frontend to FastAPI Backend)
  * Automatically attaches JWT Bearer token for protected endpoints.
  */
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("jwt_token");
@@ -12,28 +12,68 @@ const getAuthHeaders = () => {
   };
 };
 
-// --- MODULE 1: AUTH & WORKSPACE APIS ---
+// ==========================================
+// MODULE 1: AUTH & WORKSPACE APIS
+// ==========================================
 
 export const registerUser = async (email, password) => {
-  const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || "Registration failed");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Registration failed");
+    return data;
+  } catch (err) {
+    if (err.message && err.message.includes("Failed to fetch")) {
+      throw new Error(
+        `Unable to connect to backend (${API_BASE_URL}). Please ensure the server is online.`
+      );
+    }
+    throw err;
+  }
 };
 
 export const loginUser = async (email, password) => {
-  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || "Invalid credentials");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Invalid credentials");
+    return data;
+  } catch (err) {
+    if (err.message && err.message.includes("Failed to fetch")) {
+      throw new Error(
+        `Unable to connect to backend (${API_BASE_URL}). Please ensure the server is online.`
+      );
+    }
+    throw err;
+  }
+};
+
+export const resetPassword = async (email, new_password) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, new_password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Password reset failed");
+    return data;
+  } catch (err) {
+    if (err.message && err.message.includes("Failed to fetch")) {
+      throw new Error(
+        `Unable to connect to backend (${API_BASE_URL}). Please ensure the server is online.`
+      );
+    }
+    throw err;
+  }
 };
 
 export const fetchWorkspace = async () => {
@@ -67,7 +107,62 @@ export const addStockToWatchlist = async (ticker_symbol, company_name, exchange)
   return data;
 };
 
-// --- MODULE 2: STOCK SEARCH & MARKET DATA API ---
+export const removeStockFromWatchlist = async (idOrTicker) => {
+  const isId = typeof idOrTicker === "number" || /^\d+$/.test(idOrTicker);
+  const endpoint = isId
+    ? `${API_BASE_URL}/api/user/watchlist/${idOrTicker}`
+    : `${API_BASE_URL}/api/user/watchlist/ticker/${encodeURIComponent(idOrTicker)}`;
+  const res = await fetch(endpoint, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to remove from watchlist");
+  return data;
+};
+
+// ==========================================
+// MODULE 2: STOCK SEARCH & MARKET DATA APIS
+// ==========================================
+
+export const searchStocksAutocomplete = async (query, market = "NSE") => {
+  const params = new URLSearchParams({ q: query, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/search?${params.toString()}`);
+  if (!res.ok) return [];
+  return res.json();
+};
+
+export const fetchStockProfile = async (ticker, market = "NSE") => {
+  const params = new URLSearchParams({ market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/profile?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch company profile");
+  return data;
+};
+
+export const fetchStockHistory = async (ticker, period = "6mo", market = "NSE") => {
+  const params = new URLSearchParams({ period, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/history?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch price history");
+  return data;
+};
+
+export const fetchStockFinancials = async (ticker, frequency = "annual", market = "NSE") => {
+  const params = new URLSearchParams({ frequency, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/financials?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch financial statements");
+  return data;
+};
+
+export const fetchStockValidation = async (ticker, period = "6mo", market = "NSE") => {
+  const params = new URLSearchParams({ period, market });
+  const res = await fetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(ticker)}/validate?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch validation summary");
+  return data;
+};
 
 export const searchStockData = async (query, market, period) => {
   const params = new URLSearchParams({ query, market, period });
@@ -76,5 +171,49 @@ export const searchStockData = async (query, market, period) => {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || "Stock not found");
+  return data;
+};
+
+// ==========================================
+// MODULE 3: SPECIALIZED AI AGENTS APIS
+// ==========================================
+
+export const fetchMultiAgentAnalysis = async (ticker, market = "NSE", period = "6mo") => {
+  const params = new URLSearchParams({ ticker, market, period });
+  const res = await fetch(`${API_BASE_URL}/api/agents/all?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to run multi-agent analysis");
+  return data;
+};
+
+export const fetchFundamentalAnalysis = async (ticker, market = "NSE") => {
+  const params = new URLSearchParams({ ticker, market });
+  const res = await fetch(`${API_BASE_URL}/api/agents/fundamental?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Fundamental analysis failed");
+  return data;
+};
+
+export const fetchTechnicalAnalysis = async (ticker, market = "NSE", period = "6mo") => {
+  const params = new URLSearchParams({ ticker, market, period });
+  const res = await fetch(`${API_BASE_URL}/api/agents/technical?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Technical analysis failed");
+  return data;
+};
+
+export const fetchNewsAnalysis = async (ticker, market = "NSE") => {
+  const params = new URLSearchParams({ ticker, market });
+  const res = await fetch(`${API_BASE_URL}/api/agents/news?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "News analysis failed");
+  return data;
+};
+
+export const fetchRiskAnalysis = async (ticker, market = "NSE", period = "6mo") => {
+  const params = new URLSearchParams({ ticker, market, period });
+  const res = await fetch(`${API_BASE_URL}/api/agents/risk?${params.toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Risk analysis failed");
   return data;
 };

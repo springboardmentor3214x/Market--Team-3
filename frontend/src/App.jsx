@@ -1,41 +1,90 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
+import LoginPage from "./components/Login/LoginPage";
+import Workspace from "./components/Workspace/Workspace";
 import {
-  registerUser,
-  loginUser,
   fetchWorkspace,
   savePreferences,
   addStockToWatchlist,
+  removeStockFromWatchlist,
   searchStockData,
+  fetchStockHistory,
+  fetchMultiAgentAnalysis,
 } from "./api";
 import "./App.css";
 
 function App() {
-  // --- Auth State (Module 1) ---
+  // --- Auth State ---
+  const alreadyLoggedIn = !!localStorage.getItem("jwt_token");
   const [token, setToken] = useState(localStorage.getItem("jwt_token") || "");
-  const [isLoginView, setIsLoginView] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authMessage, setAuthMessage] = useState({ type: "", text: "" });
-
-  // --- Workspace State (Module 1) ---
   const [userEmail, setUserEmail] = useState(localStorage.getItem("user_email") || "");
+
+  // --- Cinematic Crossfade Transition State ---
+  const [showLogin, setShowLogin] = useState(!alreadyLoggedIn);
+  const [showWorkspace, setShowWorkspace] = useState(alreadyLoggedIn);
+  const [transitionPhase, setTransitionPhase] = useState("idle"); // idle | fading | done
+
+  // --- Workspace State ---
   const [market, setMarket] = useState("NSE");
   const [period, setPeriod] = useState("6mo");
   const [watchlist, setWatchlist] = useState([]);
   const [history, setHistory] = useState([]);
 
-  // --- Market Data State (Module 2) ---
+  // --- Market Data State ---
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [chartLoading, setChartLoading] = useState(false);
   const [stockResult, setStockResult] = useState(null);
   const [searchError, setSearchError] = useState("");
   const [activeStatement, setActiveStatement] = useState("income_statement");
+  const historyCacheRef = useRef({});
+  const masterHistoryRef = useRef({});
 
-  // Load workspace data when user logs in
-  const loadUserWorkspace = async () => {
+  // --- Module 3: Specialized AI Agent State ---
+  const [agentAnalysis, setAgentAnalysis] = useState(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+
+  // --- In-App Non-Blocking Toast Notification ---
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3200);
+  };
+
+  // Initialize Lenis Smooth Inertial Scrolling
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.25,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1.05,
+      touchMultiplier: 1.8,
+    });
+    window.lenis = lenis;
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    const rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+      delete window.lenis;
+    };
+  }, []);
+
+  // Load workspace data
+  const loadUserWorkspace = async (initPreferences = false) => {
     try {
       const data = await fetchWorkspace();
-      if (data.preferences) {
+      if (initPreferences && data.preferences) {
         setMarket(data.preferences.preferred_market || "NSE");
         setPeriod(data.preferences.analysis_period || "6mo");
       }
@@ -47,445 +96,290 @@ function App() {
   };
 
   useEffect(() => {
-    if (token) {
-      loadUserWorkspace();
-    }
+    if (token) loadUserWorkspace(true);
   }, [token]);
 
-  // --- Module 1: Registration & Login Handler ---
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    setAuthMessage({ type: "", text: "" });
+  // --- Cinematic Crossfade Login → Workspace ---
+  const handleLoginSuccess = (jwtToken, loggedInEmail, loggedInUserId) => {
+    localStorage.setItem("jwt_token", jwtToken);
+    localStorage.setItem("user_email", loggedInEmail);
+    setUserEmail(loggedInEmail);
+    setToken(jwtToken);
 
-    if (password.length < 6) {
-      setAuthMessage({ type: "error", text: "Password must be at least 6 characters." });
-      return;
-    }
+    // Reset scroll to top immediately
+    if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+    else window.scrollTo(0, 0);
 
-    try {
-      if (isLoginView) {
-        const res = await loginUser(email, password);
-        localStorage.setItem("jwt_token", res.access_token);
-        localStorage.setItem("user_email", res.email);
-        setUserEmail(res.email);
-        setToken(res.access_token);
-      } else {
-        await registerUser(email, password);
-        setAuthMessage({
-          type: "success",
-          text: "Registration successful! Please log in with your credentials.",
-        });
-        setIsLoginView(true);
-      }
-    } catch (err) {
-      setAuthMessage({ type: "error", text: err.message });
-    }
+    // Phase 1: Start fade-out of login, fade-in workspace overlay
+    setTransitionPhase("fading");
+    setShowWorkspace(true);
+
+    // Phase 2: After crossfade completes, remove login from DOM entirely
+    setTimeout(() => {
+      setShowLogin(false);
+      setTransitionPhase("done");
+      // Ensure scroll is at top of workspace
+      if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+      else window.scrollTo(0, 0);
+      // Final cleanup
+      setTimeout(() => setTransitionPhase("idle"), 100);
+    }, 900);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("jwt_token");
     localStorage.removeItem("user_email");
     setToken("");
+    setUserEmail("");
     setStockResult(null);
+    setAgentAnalysis(null);
+    setTransitionPhase("idle");
+    setShowLogin(true);
+    setShowWorkspace(false);
+    if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+    else window.scrollTo(0, 0);
   };
 
-  // --- Module 1: Save User Preferences ---
   const handlePreferenceSave = async () => {
     try {
       await savePreferences(market, period);
-      alert(`Preferences saved: Market (${market}), Period (${period})`);
+      showToast(`Preferences saved: Market (${market}), Period (${period})`);
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
     }
   };
 
-  // --- Module 2: Search Stock & Collect Validated Data ---
-  const handleStockSearch = async (e, customQuery = null, customMarket = null) => {
+  const handleRunAgentAnalysis = async (tickerOverride = null, marketOverride = null, periodOverride = null) => {
+    const t = tickerOverride || stockResult?.source_metadata?.ticker || searchQuery;
+    const m = marketOverride || stockResult?.source_metadata?.exchange || market;
+    const p = periodOverride || period;
+    if (!t) return;
+
+    setAgentLoading(true);
+    try {
+      const data = await fetchMultiAgentAnalysis(t, m, p);
+      setAgentAnalysis(data);
+    } catch (err) {
+      console.error("Multi-Agent analysis error:", err);
+    } finally {
+      setAgentLoading(false);
+    }
+  };
+
+  const handleStockSearch = async (e, customQuery = null, customMarket = null, customPeriod = null) => {
     if (e) e.preventDefault();
     const q = customQuery || searchQuery;
     const m = customMarket || market;
+    const p = customPeriod || period;
     if (!q.trim()) return;
+
+    if (customPeriod) {
+      setPeriod(customPeriod);
+    }
+    if (customMarket) {
+      setMarket(customMarket);
+    }
 
     setLoading(true);
     setSearchError("");
     try {
-      const result = await searchStockData(q, m, period);
+      const result = await searchStockData(q, m, p);
       setStockResult(result);
-      loadUserWorkspace(); // Refresh user's research history
+      if (result?.source_metadata?.ticker && result?.ohlcv_data) {
+        historyCacheRef.current[`${result.source_metadata.ticker}-${p}`] = result.ohlcv_data;
+        masterHistoryRef.current[result.source_metadata.ticker] = result.ohlcv_data;
+      }
+      loadUserWorkspace(false);
+
+      // Trigger Multi-Agent Research Swarm concurrently
+      const resolvedTicker = result.source_metadata?.ticker || q;
+      const resolvedMarket = result.source_metadata?.exchange || m;
+      handleRunAgentAnalysis(resolvedTicker, resolvedMarket, p);
     } catch (err) {
       setSearchError(err.message);
       setStockResult(null);
+      setAgentAnalysis(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Module 1: Add Current Stock to Watchlist ---
   const handleAddToWatchlist = async () => {
     if (!stockResult) return;
     try {
       const meta = stockResult.source_metadata;
       await addStockToWatchlist(meta.ticker, meta.company_name, meta.exchange);
-      loadUserWorkspace();
-      alert(`${meta.company_name} added to your watchlist!`);
+      loadUserWorkspace(false);
+      showToast(`${meta.company_name} added to your watchlist!`);
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleRemoveFromWatchlist = async (id, ticker) => {
+    const target = id || ticker;
+    // Optimistic UI update: instantly remove from state
+    setWatchlist((prev) =>
+      prev.filter((item) => {
+        if (id && item.id === id) return false;
+        if (
+          ticker &&
+          (item.ticker_symbol?.toUpperCase() === ticker?.toUpperCase() ||
+            item.ticker_symbol?.split(".")[0]?.toUpperCase() ===
+              ticker?.split(".")[0]?.toUpperCase())
+        )
+          return false;
+        return true;
+      })
+    );
+
+    try {
+      await removeStockFromWatchlist(target);
+      loadUserWorkspace(false);
+      showToast(`Removed from your watchlist.`);
+    } catch (err) {
+      loadUserWorkspace(false); // revert on error
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleFastPeriodChange = async (newPeriod) => {
+    setPeriod(newPeriod);
+    if (!stockResult?.source_metadata?.ticker) return;
+
+    const ticker = stockResult.source_metadata.ticker;
+    const exchange = stockResult.source_metadata.exchange || market;
+    const cacheKey = `${ticker}-${newPeriod}`;
+
+    // 1. Instant switch if already cached (zero delay)
+    if (historyCacheRef.current[cacheKey]) {
+      setStockResult((prev) => ({
+        ...prev,
+        ohlcv_data: historyCacheRef.current[cacheKey],
+      }));
+      return;
+    }
+
+    // 2. Instant client-side slice from master dataset so graph updates in 0ms!
+    const masterData = masterHistoryRef.current[ticker] || stockResult.ohlcv_data;
+    if (masterData && masterData.length > 0) {
+      if (!masterHistoryRef.current[ticker] || masterData.length > masterHistoryRef.current[ticker].length) {
+        masterHistoryRef.current[ticker] = masterData;
+      }
+      const sliceCountMap = { "1mo": 22, "3mo": 65, "6mo": 130, "1y": 252, "5y": 1260 };
+      const sliceCount = sliceCountMap[newPeriod];
+      if (sliceCount && sliceCount < masterData.length) {
+        const sliced = masterData.slice(-sliceCount);
+        setStockResult((prev) => ({
+          ...prev,
+          ohlcv_data: sliced,
+        }));
+      }
+    }
+
+    // 3. Background fetch for exact exchange resolution
+    setChartLoading(true);
+    try {
+      const historyData = await fetchStockHistory(ticker, newPeriod, exchange);
+      if (historyData && historyData.records && historyData.records.length > 0) {
+        historyCacheRef.current[cacheKey] = historyData.records;
+        if (historyData.records.length > (masterHistoryRef.current[ticker]?.length || 0)) {
+          masterHistoryRef.current[ticker] = historyData.records;
+        }
+        setStockResult((prev) => ({
+          ...prev,
+          ohlcv_data: historyData.records,
+          validation_summary: historyData.validation_summary || prev.validation_summary,
+        }));
+      }
+    } catch (err) {
+      console.warn("Background history fetch failed, using local slice fallback:", err);
+    } finally {
+      setChartLoading(false);
     }
   };
 
   // ==========================================
-  // VIEW 1: LOGIN & REGISTRATION SCREEN
+  // CINEMATIC CROSSFADE — zero jump, zero glitch
+  // Login overlays fixed & fades/blurs out while Workspace reveals smoothly
   // ==========================================
-  if (!token) {
-    return (
-      <div className="auth-container">
-        <h2>{isLoginView ? "Sign In to Research Workspace" : "Create Account"}</h2>
-        <p style={{ color: "#94a3b8", fontSize: "14px" }}>
-          AI-Powered Multi-Agent Stock Research Analyst
-        </p>
-
-        {authMessage.text && (
-          <div className={authMessage.type === "error" ? "alert-error" : "alert-success"}>
-            {authMessage.text}
-          </div>
-        )}
-
-        <form onSubmit={handleAuthSubmit}>
-          <div className="form-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              required
-              placeholder="ankit@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              required
-              placeholder="Enter password (min 6 chars)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <button type="submit" className="btn" style={{ width: "100%", marginTop: "20px" }}>
-            {isLoginView ? "Login" : "Register"}
-          </button>
-        </form>
-
-        <p style={{ marginTop: "16px", fontSize: "14px", textAlign: "center", color: "#94a3b8" }}>
-          {isLoginView ? "New user? " : "Already have an account? "}
-          <span
-            style={{ color: "#38bdf8", cursor: "pointer", fontWeight: 600 }}
-            onClick={() => {
-              setIsLoginView(!isLoginView);
-              setAuthMessage({ type: "", text: "" });
-            }}
-          >
-            {isLoginView ? "Create an account" : "Login here"}
-          </span>
-        </p>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // VIEW 2: PROTECTED RESEARCH WORKSPACE
-  // ==========================================
-  const statementObj =
-    stockResult?.financial_statements?.[activeStatement]?.statement || {};
-  const statementDates = Object.keys(statementObj);
-  const statementMetrics =
-    statementDates.length > 0 ? Object.keys(statementObj[statementDates[0]] || {}) : [];
-
   return (
-    <div>
-      {/* Top Navbar */}
-      <nav className="navbar">
-        <h1>Multi-Agent Stock Research Analyst</h1>
-        <div className="user-bar">
-          <span style={{ fontSize: "14px", color: "#94a3b8" }}>{userEmail}</span>
-          <button className="btn btn-outline" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
-      </nav>
+    <div className="app-crossfade-container">
+      {/* ===== LOGIN LAYER (crossfades out on success) ===== */}
+      <AnimatePresence>
+        {showLogin && (
+          <motion.div
+            className={`app-crossfade-layer app-crossfade-login ${
+              transitionPhase === "fading" ? "is-fading" : ""
+            }`}
+            initial={{ opacity: 1, scale: 1 }}
+            animate={{
+              opacity: transitionPhase === "fading" ? 0 : 1,
+              scale: transitionPhase === "fading" ? 1.03 : 1,
+              filter: transitionPhase === "fading" ? "blur(10px)" : "blur(0px)",
+            }}
+            exit={{ opacity: 0, scale: 1.04, filter: "blur(12px)" }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <LoginPage onLoginSuccess={handleLoginSuccess} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="workspace-grid">
-        {/* LEFT SIDEBAR: Module 1 (Preferences, Watchlist, Research History) */}
-        <div>
-          {/* 1. User Preferences */}
-          <div className="card">
-            <h3>User Preferences</h3>
-            <div className="form-group">
-              <label style={{ fontSize: "13px" }}>Preferred Market</label>
-              <select value={market} onChange={(e) => setMarket(e.target.value)}>
-                <option value="NSE">NSE (India - INR)</option>
-                <option value="BSE">BSE (India - INR)</option>
-                <option value="NYSE">NYSE (US - USD)</option>
-                <option value="NASDAQ">NASDAQ (US - USD)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label style={{ fontSize: "13px" }}>Analysis Period</label>
-              <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                <option value="1mo">1 Month</option>
-                <option value="3mo">3 Months</option>
-                <option value="6mo">6 Months</option>
-                <option value="1y">1 Year</option>
-                <option value="5y">5 Years</option>
-              </select>
-            </div>
-            <button
-              className="btn"
-              style={{ width: "100%", marginTop: "14px" }}
-              onClick={handlePreferenceSave}
-            >
-              Save Default Preferences
-            </button>
-          </div>
+      {/* ===== WORKSPACE LAYER (reveals smoothly at top) ===== */}
+      <AnimatePresence>
+        {showWorkspace && (
+          <motion.div
+            className="app-crossfade-layer app-crossfade-workspace"
+            initial={{ opacity: transitionPhase === "fading" ? 0 : 1 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Workspace
+              userEmail={userEmail}
+              onLogout={handleLogout}
+              market={market}
+              setMarket={setMarket}
+              period={period}
+              setPeriod={setPeriod}
+              onPreferenceSave={handlePreferenceSave}
+              watchlist={watchlist}
+              history={history}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onStockSearch={handleStockSearch}
+              loading={loading}
+              stockResult={stockResult}
+              searchError={searchError}
+              onAddToWatchlist={handleAddToWatchlist}
+              onRemoveFromWatchlist={handleRemoveFromWatchlist}
+              chartLoading={chartLoading}
+              onFastPeriodChange={handleFastPeriodChange}
+              activeStatement={activeStatement}
+              setActiveStatement={setActiveStatement}
+              agentAnalysis={agentAnalysis}
+              agentLoading={agentLoading}
+              onRunAgentAnalysis={handleRunAgentAnalysis}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* 2. Saved Watchlist */}
-          <div className="card">
-            <h3>Saved Watchlist ({watchlist.length})</h3>
-            {watchlist.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#64748b" }}>No stocks saved yet.</p>
-            ) : (
-              watchlist.map((item) => (
-                <div
-                  key={item.id}
-                  className="list-item"
-                  onClick={() => {
-                    setSearchQuery(item.ticker_symbol);
-                    handleStockSearch(null, item.ticker_symbol, item.exchange);
-                  }}
-                >
-                  <strong>{item.company_name}</strong>
-                  <span>{item.ticker_symbol}</span>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* 3. User-Specific Research History */}
-          <div className="card">
-            <h3>Recent Research History</h3>
-            {history.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#64748b" }}>No recent searches.</p>
-            ) : (
-              history.slice(0, 8).map((h) => (
-                <div
-                  key={h.id}
-                  className="list-item"
-                  onClick={() => {
-                    setSearchQuery(h.ticker_symbol);
-                    handleStockSearch(null, h.ticker_symbol, h.exchange);
-                  }}
-                >
-                  <span>{h.company_name}</span>
-                  <span style={{ color: "#94a3b8", fontSize: "12px" }}>{h.ticker_symbol}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* MAIN AREA: Module 2 (Stock Search, OHLCV, Validation & Financials) */}
-        <div>
-          {/* Stock Search Bar */}
-          <div className="card">
-            <h3>Search Publicly Traded Company (Module 2)</h3>
-            <form className="search-bar" onSubmit={handleStockSearch}>
-              <input
-                type="text"
-                placeholder="Enter Company Name or Ticker (e.g., Infosys, INFY, Reliance, TCS, AAPL)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button type="submit" className="btn" disabled={loading}>
-                {loading ? "Collecting Data..." : "Search & Collect Data"}
-              </button>
-            </form>
-            {searchError && <div className="alert-error">{searchError}</div>}
-          </div>
-
-          {/* Search Results Display */}
-          {stockResult && (
-            <>
-              {/* Company Profile & Source Tracking */}
-              <div className="card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <h2 style={{ color: "#38bdf8" }}>
-                      {stockResult.source_metadata.company_name} ({stockResult.source_metadata.ticker})
-                    </h2>
-                    <p style={{ fontSize: "14px", color: "#94a3b8", marginTop: "4px" }}>
-                      Sector: {stockResult.company_profile.sector} | Industry:{" "}
-                      {stockResult.company_profile.industry}
-                    </p>
-                  </div>
-                  <button className="btn btn-outline" onClick={handleAddToWatchlist}>
-                    + Add to Watchlist
-                  </button>
-                </div>
-
-                {/* Data Source & Timestamp Tracking (Requirement 5) */}
-                <div className="badge-row">
-                  <span className="badge">
-                    Exchange: <strong>{stockResult.source_metadata.exchange}</strong>
-                  </span>
-                  <span className="badge">
-                    Currency: <strong>{stockResult.source_metadata.currency}</strong>
-                  </span>
-                  <span className="badge">
-                    Source: <strong>{stockResult.source_metadata.data_source}</strong>
-                  </span>
-                  <span className="badge">
-                    Retrieved At:{" "}
-                    <strong>
-                      {new Date(stockResult.source_metadata.retrieved_at).toLocaleString()}
-                    </strong>
-                  </span>
-                </div>
-
-                <p style={{ fontSize: "13px", color: "#cbd5e1", lineHeight: "1.5" }}>
-                  {stockResult.company_profile.description?.slice(0, 420)}...
-                </p>
-              </div>
-
-              {/* Data Validation Report (Requirement 6) */}
-              <div className="card">
-                <h3>Data Quality & Validation Summary</h3>
-                <div className="badge-row">
-                  <span className="badge">
-                    Initial Rows: <strong>{stockResult.validation_summary.initial_records}</strong>
-                  </span>
-                  <span className="badge">
-                    Valid OHLCV Rows:{" "}
-                    <strong style={{ color: "#4ade80" }}>
-                      {stockResult.validation_summary.valid_records_returned}
-                    </strong>
-                  </span>
-                  <span className="badge">
-                    Duplicates Removed:{" "}
-                    <strong>{stockResult.validation_summary.duplicates_removed}</strong>
-                  </span>
-                  <span className="badge">
-                    Missing Values Handled:{" "}
-                    <strong>{stockResult.validation_summary.missing_values_filled}</strong>
-                  </span>
-                  <span className="badge">
-                    Inconsistent Rows Dropped:{" "}
-                    <strong>{stockResult.validation_summary.inconsistent_rows_dropped}</strong>
-                  </span>
-                </div>
-              </div>
-
-              {/* Historical OHLCV Data Table (Requirements 2 & 3) */}
-              <div className="card">
-                <h3>
-                  Historical OHLCV Prices ({stockResult.source_metadata.currency})
-                </h3>
-                <div className="table-wrapper">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Trading Date</th>
-                        <th>Open</th>
-                        <th>High</th>
-                        <th>Low</th>
-                        <th>Close</th>
-                        <th>Volume</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockResult.ohlcv_data
-                        .slice()
-                        .reverse()
-                        .slice(0, 30)
-                        .map((row, idx) => (
-                          <tr key={idx}>
-                            <td>{row.trading_date}</td>
-                            <td>{row.Open}</td>
-                            <td>{row.High}</td>
-                            <td>{row.Low}</td>
-                            <td>
-                              <strong>{row.Close}</strong>
-                            </td>
-                            <td>{row.Volume.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Financial Statements (Requirement 4) */}
-              <div className="card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h3>Financial Statements</h3>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button
-                      className={`btn ${activeStatement === "income_statement" ? "" : "btn-outline"}`}
-                      onClick={() => setActiveStatement("income_statement")}
-                    >
-                      Income Statement
-                    </button>
-                    <button
-                      className={`btn ${activeStatement === "balance_sheet" ? "" : "btn-outline"}`}
-                      onClick={() => setActiveStatement("balance_sheet")}
-                    >
-                      Balance Sheet
-                    </button>
-                    <button
-                      className={`btn ${activeStatement === "cash_flow" ? "" : "btn-outline"}`}
-                      onClick={() => setActiveStatement("cash_flow")}
-                    >
-                      Cash Flow
-                    </button>
-                  </div>
-                </div>
-
-                {statementDates.length === 0 ? (
-                  <p style={{ marginTop: "12px", color: "#94a3b8" }}>
-                    Financial statement data not available for this company.
-                  </p>
-                ) : (
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Metric</th>
-                          {statementDates.map((d) => (
-                            <th key={d}>{d}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {statementMetrics.slice(0, 15).map((metric) => (
-                          <tr key={metric}>
-                            <td>{metric}</td>
-                            {statementDates.map((d) => (
-                              <td key={d}>
-                                {Number(statementObj[d][metric] || 0).toLocaleString()}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      {/* Floating Non-Blocking In-App Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className={`ws-app-toast ${toast.type || "success"}`}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.22 }}
+          >
+            <span className="ws-toast-dot" />
+            <span>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

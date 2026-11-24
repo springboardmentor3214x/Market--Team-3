@@ -183,3 +183,39 @@ th {
 .list-item:hover {
   color: #38bdf8;
 }
+
+/* ===== Cinematic Crossfade Transition System ===== */
+.app-crossfade-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #05080e;
+}
+
+.app-crossfade-layer {
+  width: 100%;
+  min-height: 100vh;
+  will-change: opacity, transform, filter;
+}
+
+.app-crossfade-login {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.app-crossfade-login.is-fading {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.app-crossfade-workspace {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  z-index: 10;
+  will-change: opacity;
+}
