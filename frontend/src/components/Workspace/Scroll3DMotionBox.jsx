@@ -146,46 +146,6 @@ export default function Scroll3DMotionBox({
           />
         </motion.div>
 
-        {/* 3D Cyber HUD Coordinate Tag (Pointer Events Disabled) */}
-        {tag && (
-          <div
-            style={{
-              position: "absolute",
-              top: "-11px",
-              right: "24px",
-              zIndex: 3,
-              background: "rgba(5, 8, 14, 0.92)",
-              border: "1px solid rgba(0, 255, 135, 0.35)",
-              backdropFilter: "blur(12px)",
-              padding: "3px 10px",
-              borderRadius: "4px",
-              fontFamily: "var(--ws-font-mono, monospace)",
-              fontSize: "0.625rem",
-              color: "#00ff87",
-              letterSpacing: "0.09em",
-              textTransform: "uppercase",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              pointerEvents: "none",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.6)",
-              transform: "translateZ(15px)",
-            }}
-          >
-            <span
-              style={{
-                width: "5px",
-                height: "5px",
-                background: "#00ff87",
-                borderRadius: "50%",
-                display: "inline-block",
-                boxShadow: "0 0 8px #00ff87",
-              }}
-            />
-            {tag}
-          </div>
-        )}
-
         {/* Interactive Card Content Container: Highest Z-Index & Clean Hit-Testing */}
         <div
           style={{

@@ -64,6 +64,7 @@ class FundamentalAnalysisOutput(BaseModel):
 class TechnicalIndicatorPoint(BaseModel):
     date: str
     close: float
+    sma_5: Optional[float] = None
     sma_20: Optional[float] = None
     sma_50: Optional[float] = None
     sma_200: Optional[float] = None
@@ -78,6 +79,7 @@ class TechnicalIndicatorPoint(BaseModel):
 
 class TechnicalIndicatorsSummary(BaseModel):
     current_price: float
+    sma_5: Optional[float] = None
     sma_20: Optional[float] = None
     sma_50: Optional[float] = None
     sma_200: Optional[float] = None
@@ -103,7 +105,7 @@ class TechnicalAnalysisOutput(BaseModel):
     predefined_conditions: List[str]
     signal_summary: str
     overall_technical_score: float = Field(..., description="Score from 0 to 100")
-    disclaimer: str = "Technical indicators describe historical market patterns and momentum. They are not guaranteed predictions of future asset prices."
+    disclaimer: str = "Important: Technical indicators help us understand historical market conditions. They do not guarantee future stock price movements or provide certain predictions."
     analyzed_at: datetime = Field(default_factory=datetime.utcnow)
 
 

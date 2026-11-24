@@ -400,15 +400,31 @@ def get_fundamental_analysis(
         raise HTTPException(status_code=500, detail=f"Fundamental analysis failed: {str(e)}")
 
 
-@app.get("/api/agents/technical", tags=["Module 3: AI Agents"])
+@app.get("/api/agents/technical", tags=["Module 4: Technical Analysis Agent"])
 def get_technical_analysis(
     ticker: str = Query(..., description="Stock ticker symbol (e.g. INFY.NS, AAPL)"),
     market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
     period: str = Query("6mo", description="Historical period: 1mo, 3mo, 6mo, 1y, 5y"),
 ):
     """
-    Module 3 - Agent 2: Technical Analysis Agent.
-    Computes SMA (20, 50, 200), EMA (12, 26), RSI-14, MACD, and historical volatility.
+    Module 4 - Technical Analysis Agent:
+    Computes SMA (5, 20, 50, 200), EMA (12, 26), RSI-14, MACD (12, 26, 9), and historical volatility.
+    Identifies predefined technical conditions and generates explanatory narratives.
+    """
+    try:
+        return agent_orchestrator.run_technical(ticker=ticker, exchange=market, period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Technical analysis failed: {str(e)}")
+
+
+@app.get("/api/agents/technical/{ticker}", tags=["Module 4: Technical Analysis Agent"])
+def get_technical_analysis_by_path(
+    ticker: str,
+    market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+    period: str = Query("6mo", description="Historical period: 1mo, 3mo, 6mo, 1y, 5y"),
+):
+    """
+    Module 4 - Technical Analysis Agent (Path URL alias).
     """
     try:
         return agent_orchestrator.run_technical(ticker=ticker, exchange=market, period=period)

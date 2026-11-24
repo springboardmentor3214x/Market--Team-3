@@ -1,12 +1,12 @@
 """
-Technical Analysis Agent
+Technical Analysis Agent (Module 4)
 Computes historical price trends and market indicators using Pandas and NumPy:
-- Simple Moving Average (SMA 20, 50, 200)
+- Simple Moving Average (SMA 5, 20, 50, 200) with strict data sufficiency handling
 - Exponential Moving Average (EMA 12, 26)
 - Relative Strength Index (RSI 14)
 - Moving Average Convergence Divergence (MACD 12, 26, 9)
 - Annualized Historical Volatility
-- Trend detection and predefined condition flags
+- Trend detection, predefined condition identification, and explanatory narratives
 """
 
 from typing import List, Dict, Any, Optional
@@ -24,7 +24,13 @@ class TechnicalAnalysisAgent:
     def __init__(self, agent_name: str = "Technical Analysis Agent"):
         self.agent_name = agent_name
 
-    def analyze(self, ticker: str, exchange: str = "NSE", period: str = "6mo", ohlcv_df: Optional[pd.DataFrame] = None) -> TechnicalAnalysisOutput:
+    def analyze(
+        self,
+        ticker: str,
+        exchange: str = "NSE",
+        period: str = "6mo",
+        ohlcv_df: Optional[pd.DataFrame] = None,
+    ) -> TechnicalAnalysisOutput:
         clean_ticker = ticker.strip().upper()
         if exchange in ["NSE", "BSE"] and not (clean_ticker.endswith(".NS") or clean_ticker.endswith(".BO")):
             full_ticker = f"{clean_ticker}.NS" if exchange == "NSE" else f"{clean_ticker}.BO"
@@ -33,7 +39,7 @@ class TechnicalAnalysisAgent:
 
         currency = "INR" if exchange in ["NSE", "BSE"] else "USD"
 
-        # 1. Obtain OHLCV data
+        # 1. Obtain and validate OHLCV dataset
         if ohlcv_df is None or ohlcv_df.empty:
             df = yf.download(full_ticker, period=period, interval="1d", progress=False)
             if isinstance(df.columns, pd.MultiIndex):
@@ -51,38 +57,46 @@ class TechnicalAnalysisAgent:
         if df.empty or len(df) < 5:
             raise ValueError(f"Insufficient historical data ({len(df)} rows) to compute technical indicators for {clean_ticker}.")
 
-        # Ensure numeric close
+        # Ensure sorted chronologically and clean numeric fields
+        if "trading_date" in df.columns:
+            df = df.sort_values(by="trading_date").reset_index(drop=True)
+
         df["Close"] = pd.to_numeric(df["Close"], errors="coerce").ffill()
         df["Volume"] = pd.to_numeric(df.get("Volume", 0), errors="coerce").fillna(0)
         close = df["Close"]
+        n_rows = len(close)
 
-        # 2. Moving Averages
-        sma_20 = close.rolling(window=20, min_periods=1).mean()
-        sma_50 = close.rolling(window=50, min_periods=1).mean()
-        sma_200 = close.rolling(window=200, min_periods=1).mean() if len(close) >= 200 else None
+        # 2. Simple Moving Averages (SMA 5, 20, 50, 200)
+        # Strict sufficiency: if fewer trading days than window exist, SMA returns NaN / None
+        sma_5 = close.rolling(window=5, min_periods=5).mean()
+        sma_20 = close.rolling(window=20, min_periods=20).mean()
+        sma_50 = close.rolling(window=50, min_periods=50).mean()
+        sma_200 = close.rolling(window=200, min_periods=200).mean() if n_rows >= 200 else None
 
+        # 3. Exponential Moving Averages (EMA 12, 26)
         ema_12 = close.ewm(span=12, adjust=False).mean()
         ema_26 = close.ewm(span=26, adjust=False).mean()
 
-        # 3. MACD Calculation (12, 26, 9)
+        # 4. MACD Calculation (12, 26, 9)
         macd_line = ema_12 - ema_26
         macd_signal = macd_line.ewm(span=9, adjust=False).mean()
         macd_hist = macd_line - macd_signal
 
-        # 4. RSI-14 Calculation (Wilder smoothing)
+        # 5. RSI-14 Calculation (Momentum Oscillator 0-100)
         delta = close.diff()
-        gain = (delta.where(delta > 0, 0.0)).rolling(window=14, min_periods=1).mean()
-        loss = (-delta.where(delta < 0, 0.0)).rolling(window=14, min_periods=1).mean()
+        gain = (delta.where(delta > 0, 0.0)).rolling(window=14, min_periods=14).mean()
+        loss = (-delta.where(delta < 0, 0.0)).rolling(window=14, min_periods=14).mean()
         rs = gain / loss.replace(0, np.nan)
         rsi_series = 100.0 - (100.0 / (1.0 + rs))
         rsi_series = rsi_series.fillna(50.0)
 
-        # 5. Annualized Historical Volatility
+        # 6. Annualized Historical Volatility
         log_ret = np.log(close / close.shift(1)).dropna()
         volatility = round(float(log_ret.std() * np.sqrt(252) * 100.0), 2) if len(log_ret) > 1 else 0.0
 
-        # Current Latest Values
+        # Current Latest Computed Values
         current_price = round(float(close.iloc[-1]), 2)
+        cur_sma5 = round(float(sma_5.iloc[-1]), 2) if not pd.isna(sma_5.iloc[-1]) else None
         cur_sma20 = round(float(sma_20.iloc[-1]), 2) if not pd.isna(sma_20.iloc[-1]) else None
         cur_sma50 = round(float(sma_50.iloc[-1]), 2) if not pd.isna(sma_50.iloc[-1]) else None
         cur_sma200 = round(float(sma_200.iloc[-1]), 2) if (sma_200 is not None and not pd.isna(sma_200.iloc[-1])) else None
@@ -93,21 +107,21 @@ class TechnicalAnalysisAgent:
         cur_signal = round(float(macd_signal.iloc[-1]), 2)
         cur_hist = round(float(macd_hist.iloc[-1]), 2)
 
-        # 6. Predefined Technical Conditions Identification
+        # 7. Identification of Predefined Technical Conditions
         conditions: List[str] = []
 
-        # RSI condition
+        # A. RSI Condition (Overbought > 70, Oversold < 30, Neutral 30-70)
         if cur_rsi >= 70.0:
             rsi_cond = "Overbought"
-            conditions.append(f"RSI-14 ({cur_rsi}) indicates overbought momentum (>70). Potential pullback risk.")
+            conditions.append(f"RSI-14 is at {cur_rsi}, which falls into the commonly used overbought zone (>70).")
         elif cur_rsi <= 30.0:
             rsi_cond = "Oversold"
-            conditions.append(f"RSI-14 ({cur_rsi}) indicates oversold territory (<30). Potential accumulation zone.")
+            conditions.append(f"RSI-14 is at {cur_rsi}, which falls into the oversold zone (<30).")
         else:
             rsi_cond = "Neutral"
-            conditions.append(f"RSI-14 ({cur_rsi}) is in neutral territory (30-70).")
+            conditions.append(f"RSI-14 is at {cur_rsi}, remaining in balanced neutral territory (30-70).")
 
-        # MACD condition
+        # B. MACD Condition (Momentum & Crossover Analysis)
         prev_hist = float(macd_hist.iloc[-2]) if len(macd_hist) >= 2 else 0.0
         if prev_hist < 0 and cur_hist > 0:
             macd_cond = "Bullish Crossover"
@@ -117,33 +131,51 @@ class TechnicalAnalysisAgent:
             conditions.append("MACD Line crossed below Signal Line (Recent Bearish Crossover).")
         elif cur_hist > 0:
             macd_cond = "Bullish Momentum"
-            conditions.append(f"MACD Histogram is positive (+{cur_hist}), sustaining upward momentum.")
+            conditions.append(f"MACD Line ({cur_macd}) is above Signal Line ({cur_signal}) with positive histogram (+{cur_hist}).")
         else:
             macd_cond = "Bearish Momentum"
-            conditions.append(f"MACD Histogram is negative ({cur_hist}), sustaining downward pressure.")
+            conditions.append(f"MACD Line ({cur_macd}) is below Signal Line ({cur_signal}) with negative histogram ({cur_hist}).")
 
-        # Moving Average Trend Condition
+        # C. Moving Average Position & Overall Trend Condition
+        ma_details: List[str] = []
+        if cur_sma5 is not None:
+            rel_5 = "above" if current_price >= cur_sma5 else "below"
+            ma_details.append(f"5-day SMA ({currency} {cur_sma5}) [{rel_5}]")
+        if cur_sma20 is not None:
+            rel_20 = "above" if current_price >= cur_sma20 else "below"
+            ma_details.append(f"20-day SMA ({currency} {cur_sma20}) [{rel_20}]")
+        if cur_sma50 is not None:
+            rel_50 = "above" if current_price >= cur_sma50 else "below"
+            ma_details.append(f"50-day SMA ({currency} {cur_sma50}) [{rel_50}]")
+
         if cur_sma20 and cur_sma50:
             if current_price > cur_sma20 > cur_sma50:
                 primary_trend = "Bullish (Upward)"
-                conditions.append("Price trades above both SMA-20 and SMA-50 in confirmed bullish alignment.")
+                conditions.append(f"Closing price ({currency} {current_price}) trades above both 20-day SMA and 50-day SMA in upward alignment.")
             elif current_price < cur_sma20 < cur_sma50:
                 primary_trend = "Bearish (Downward)"
-                conditions.append("Price trades below both SMA-20 and SMA-50 in confirmed bearish alignment.")
+                conditions.append(f"Closing price ({currency} {current_price}) trades below both 20-day SMA and 50-day SMA in downward alignment.")
             elif current_price > cur_sma20:
                 primary_trend = "Short-Term Upward"
-                conditions.append("Price is testing above short-term SMA-20.")
+                conditions.append(f"Closing price is testing above short-term 20-day SMA ({currency} {cur_sma20}).")
             else:
-                primary_trend = "Consolidation (Sideways)"
-                conditions.append("Moving averages indicate range-bound consolidation.")
+                primary_trend = "Consolidation (Mixed/Sideways)"
+                conditions.append("Moving averages indicate range-bound consolidation or mixed signals.")
+        elif cur_sma20:
+            primary_trend = "Upward" if current_price >= cur_sma20 else "Downward"
+            conditions.append(f"Closing price is {'above' if current_price >= cur_sma20 else 'below'} 20-day SMA.")
         else:
-            primary_trend = "Sideways"
+            primary_trend = "Mixed"
 
-        # 7. Assemble Chart Series Points
+        # D. Volatility Context
+        conditions.append(f"Historical annualized volatility measured at {volatility}% over {len(df)} trading days.")
+
+        # 8. Assemble Chart Series Points
         chart_series: List[TechnicalIndicatorPoint] = []
         for idx in range(len(df)):
             dt = str(df["trading_date"].iloc[idx])
             c_val = round(float(close.iloc[idx]), 2)
+            s5 = round(float(sma_5.iloc[idx]), 2) if not pd.isna(sma_5.iloc[idx]) else None
             s20 = round(float(sma_20.iloc[idx]), 2) if not pd.isna(sma_20.iloc[idx]) else None
             s50 = round(float(sma_50.iloc[idx]), 2) if not pd.isna(sma_50.iloc[idx]) else None
             s200 = round(float(sma_200.iloc[idx]), 2) if (sma_200 is not None and not pd.isna(sma_200.iloc[idx])) else None
@@ -159,6 +191,7 @@ class TechnicalAnalysisAgent:
                 TechnicalIndicatorPoint(
                     date=dt,
                     close=c_val,
+                    sma_5=s5,
                     sma_20=s20,
                     sma_50=s50,
                     sma_200=s200,
@@ -172,17 +205,17 @@ class TechnicalAnalysisAgent:
                 )
             )
 
-        # 8. Technical Score (0 to 100)
+        # 9. Technical Score
         tech_score = 50.0
-        if "Bullish" in primary_trend:
+        if "Upward" in primary_trend or "Bullish" in primary_trend:
             tech_score += 20.0
-        elif "Bearish" in primary_trend:
+        elif "Downward" in primary_trend or "Bearish" in primary_trend:
             tech_score -= 20.0
 
         if rsi_cond == "Neutral":
             tech_score += 5.0
         elif rsi_cond == "Oversold":
-            tech_score += 10.0  # Favorable mean reversion entry
+            tech_score += 10.0
         elif rsi_cond == "Overbought":
             tech_score -= 10.0
 
@@ -193,14 +226,23 @@ class TechnicalAnalysisAgent:
 
         tech_score = max(5.0, min(95.0, round(tech_score, 1)))
 
+        # 10. Module 4 Narrative Explanatory Summary
+        sma20_rel = "above" if (cur_sma20 and current_price >= cur_sma20) else "below"
+        higher_lower = "higher" if (cur_sma20 and current_price >= cur_sma20) else "lower"
+        sma20_text = f"above its 20-day SMA ({currency} {cur_sma20})" if cur_sma20 else "evaluating historical trendlines"
+
         signal_summary = (
-            f"Technical indicators characterize {clean_ticker} as {primary_trend}. "
-            f"RSI-14 stands at {cur_rsi} ({rsi_cond}), while MACD displays {macd_cond} "
-            f"(Histogram: {cur_hist}). Historical annualized volatility is measured at {volatility}%."
+            f"The stock's closing price ({currency} {current_price}) is currently {sma20_rel} its 20-day SMA, "
+            f"indicating that the recent price is {higher_lower} than its average over the selected period. "
+            f"RSI-14 is {cur_rsi}, which falls into the commonly used {rsi_cond.lower()} zone. "
+            f"MACD reflects {macd_cond} (Histogram: {cur_hist}). "
+            f"Historical annualized volatility is {volatility}%. "
+            f"These indicators describe the current historical technical conditions and should not be treated as guaranteed predictions."
         )
 
         indicators_summary = TechnicalIndicatorsSummary(
             current_price=current_price,
+            sma_5=cur_sma5,
             sma_20=cur_sma20,
             sma_50=cur_sma50,
             sma_200=cur_sma200,
@@ -225,4 +267,8 @@ class TechnicalAnalysisAgent:
             predefined_conditions=conditions,
             signal_summary=signal_summary,
             overall_technical_score=tech_score,
+            disclaimer=(
+                "Important: Technical indicators help us understand historical market conditions. "
+                "They do not guarantee future stock price movements or provide certain predictions."
+            ),
         )

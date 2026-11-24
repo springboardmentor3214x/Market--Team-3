@@ -16,6 +16,7 @@ import {
   Terminal,
 } from "lucide-react";
 import TiltCard from "./TiltCard";
+import TechnicalIndicatorsModal from "./TechnicalIndicatorsModal";
 
 export default function AIAgentCards({
   agentAnalysis = null,
@@ -26,6 +27,7 @@ export default function AIAgentCards({
   activeAgentId = "fundamental",
   onSelectAgent = () => {},
 }) {
+  const [techModalOpen, setTechModalOpen] = useState(false);
   const fundamental = agentAnalysis?.fundamental;
   const technical = agentAnalysis?.technical;
   const news = agentAnalysis?.news;
@@ -80,11 +82,14 @@ export default function AIAgentCards({
         : "Standby: Multi-timeframe OHLCV vector engine with RSI-14, MACD, and breakout detection.",
       chips: technical
         ? [
-            `RSI-14: ${technical.indicators_summary.rsi_14} (${technical.indicators_summary.rsi_condition})`,
+            technical.indicators_summary.sma_5 ? `5-SMA: ${technical.indicators_summary.sma_5.toFixed(2)}` : null,
+            technical.indicators_summary.sma_20 ? `20-SMA: ${technical.indicators_summary.sma_20.toFixed(2)}` : null,
+            technical.indicators_summary.sma_50 ? `50-SMA: ${technical.indicators_summary.sma_50.toFixed(2)}` : null,
+            `RSI-14: ${technical.indicators_summary.rsi_14?.toFixed(1)} (${technical.indicators_summary.rsi_condition})`,
             `MACD: ${technical.indicators_summary.macd_condition}`,
             `Vol: ${technical.indicators_summary.historical_volatility_pct}%`,
-          ]
-        : ["RSI Momentum", "MACD Convergence", "Historical Volatility"],
+          ].filter(Boolean)
+        : ["5-Day SMA", "20-Day SMA", "50-Day SMA", "RSI Momentum", "MACD Histogram"],
     },
     {
       id: "sentiment",
@@ -383,6 +388,35 @@ export default function AIAgentCards({
                 {currentAgent.telemetry}
               </div>
             </div>
+            {currentAgent.id === "technical" && technical && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTechModalOpen(true);
+                }}
+                style={{
+                  background: "rgba(0, 229, 255, 0.18)",
+                  border: "1px solid #00e5ff",
+                  color: "#00e5ff",
+                  padding: "5px 12px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontFamily: "var(--ws-font-mono, monospace)",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  whiteSpace: "nowrap",
+                  alignSelf: "center",
+                  boxShadow: "0 0 10px rgba(0, 229, 255, 0.25)",
+                }}
+              >
+                <Activity size={13} />
+                <span>Open Module 4 Studio</span>
+              </button>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -487,6 +521,30 @@ export default function AIAgentCards({
                         IN FOCUS
                       </span>
                     )}
+                    {agent.id === "technical" && technical && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTechModalOpen(true);
+                        }}
+                        title="Open Module 4 Technical Analysis Studio & Charts"
+                        style={{
+                          fontSize: "9px",
+                          fontFamily: "var(--ws-font-mono, monospace)",
+                          background: "rgba(0, 229, 255, 0.22)",
+                          border: "1px solid #00e5ff",
+                          color: "#00e5ff",
+                          padding: "2px 7px",
+                          borderRadius: "4px",
+                          letterSpacing: "0.06em",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                        }}
+                      >
+                        📊 CHARTS
+                      </button>
+                    )}
                     <span
                       className="ws-agent-tag"
                       style={{
@@ -579,6 +637,17 @@ export default function AIAgentCards({
           );
         })}
       </div>
+
+      {/* Module 4 Technical Analysis Agent Interactive Studio Modal */}
+      {technical && (
+        <TechnicalIndicatorsModal
+          isOpen={techModalOpen}
+          onClose={() => setTechModalOpen(false)}
+          technicalData={technical}
+          ticker={ticker || technical.ticker}
+          currency={currency || technical.currency}
+        />
+      )}
     </div>
   );
 }
