@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import WorkspaceScene3D from "./WorkspaceScene3D";
+import MarketIntelligence3DCore from "./MarketIntelligence3DCore";
 import StockSearchBar from "./StockSearchBar";
 import StockPriceChart from "./StockPriceChart";
 import FinancialStatementsView from "./FinancialStatementsView";
@@ -324,6 +325,9 @@ export default function Workspace({
               setMarket={setMarket}
               searchError={searchError}
             />
+
+            {/* 2. Interactive 3D Multi-Agent Motion Stage (Scroll-Driven Decomposition) */}
+            <MarketIntelligence3DCore />
 
             {/* AI Agent Swarm Architecture (Requirement 5) */}
             {!stockResult && (
