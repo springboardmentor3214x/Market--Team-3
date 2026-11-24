@@ -495,19 +495,21 @@ export default function Workspace({
                   </Scroll3DMotionBox>
 
                   {/* Multi-Agent Swarm Section (Requirement 5) */}
-                  <AIAgentCards
-                    agentAnalysis={agentAnalysis}
-                    agentLoading={agentLoading}
-                    onRunAnalysis={() =>
-                      onRunAgentAnalysis(
-                        stockResult.source_metadata.ticker,
-                        stockResult.source_metadata.exchange,
-                        period
-                      )
-                    }
-                    ticker={stockResult.source_metadata.ticker}
-                    currency={stockResult.source_metadata.currency}
-                  />
+                  <Scroll3DMotionBox tag="3D AGENT SWARM // 4 AUTONOMOUS AGENTS">
+                    <AIAgentCards
+                      agentAnalysis={agentAnalysis}
+                      agentLoading={agentLoading}
+                      onRunAnalysis={() =>
+                        onRunAgentAnalysis(
+                          stockResult.source_metadata.ticker,
+                          stockResult.source_metadata.exchange,
+                          period
+                        )
+                      }
+                      ticker={stockResult.source_metadata.ticker}
+                      currency={stockResult.source_metadata.currency}
+                    />
+                  </Scroll3DMotionBox>
 
                   {/* 4. Data Validation & Quality Summary Card (Requirement 8) */}
                   <Scroll3DMotionBox tag="3D AUDIT // DATA QUALITY">
