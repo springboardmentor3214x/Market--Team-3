@@ -41,18 +41,26 @@ export default function FinancialStatementsView({
         </div>
 
         {/* Annual vs Quarterly Frequency Switch */}
-        <div className="ws-freq-toggle-group">
+        <div className="ws-freq-toggle-group" style={{ position: "relative", zIndex: 30, pointerEvents: "auto" }}>
           <button
             type="button"
             className={`ws-freq-btn ${frequency === "annual" ? "active" : ""}`}
-            onClick={() => setFrequency("annual")}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFrequency("annual");
+            }}
+            style={{ cursor: "pointer", pointerEvents: "auto", position: "relative", zIndex: 31 }}
           >
             Annual
           </button>
           <button
             type="button"
             className={`ws-freq-btn ${frequency === "quarterly" ? "active" : ""}`}
-            onClick={() => setFrequency("quarterly")}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFrequency("quarterly");
+            }}
+            style={{ cursor: "pointer", pointerEvents: "auto", position: "relative", zIndex: 31 }}
           >
             Quarterly
           </button>
@@ -60,25 +68,37 @@ export default function FinancialStatementsView({
       </div>
 
       {/* Statement Type Tabs */}
-      <div className="ws-tabs-bar">
+      <div className="ws-tabs-bar" style={{ position: "relative", zIndex: 30, pointerEvents: "auto" }}>
         <button
           type="button"
           className={`ws-tab-btn ${activeTab === "income_statement" ? "active" : ""}`}
-          onClick={() => setActiveTab("income_statement")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveTab("income_statement");
+          }}
+          style={{ cursor: "pointer", pointerEvents: "auto", position: "relative", zIndex: 31 }}
         >
           Income Statement
         </button>
         <button
           type="button"
           className={`ws-tab-btn ${activeTab === "balance_sheet" ? "active" : ""}`}
-          onClick={() => setActiveTab("balance_sheet")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveTab("balance_sheet");
+          }}
+          style={{ cursor: "pointer", pointerEvents: "auto", position: "relative", zIndex: 31 }}
         >
           Balance Sheet
         </button>
         <button
           type="button"
           className={`ws-tab-btn ${activeTab === "cash_flow" ? "active" : ""}`}
-          onClick={() => setActiveTab("cash_flow")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveTab("cash_flow");
+          }}
+          style={{ cursor: "pointer", pointerEvents: "auto", position: "relative", zIndex: 31 }}
         >
           Cash Flow
         </button>

@@ -1785,3 +1785,22 @@
   }
 }
 
+/* 3D Motion Box Interactive Precision */
+.scroll-3d-motion-wrapper {
+  pointer-events: auto;
+}
+
+.scroll-3d-motion-wrapper button,
+.scroll-3d-motion-wrapper input,
+.scroll-3d-motion-wrapper select,
+.scroll-3d-motion-wrapper .ws-period-btn,
+.scroll-3d-motion-wrapper .ws-freq-btn,
+.scroll-3d-motion-wrapper .ws-tab-btn,
+.scroll-3d-motion-wrapper .ws-btn-outline {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 25;
+}
+
+

@@ -113,14 +113,28 @@ export default function StockPriceChart({
         </div>
 
         {/* Period Selector Buttons (1M, 3M, 6M, 1Y, 5Y) */}
-        <div className="ws-period-btn-group">
+        <div
+          className="ws-period-btn-group"
+          style={{ position: "relative", zIndex: 30, pointerEvents: "auto" }}
+        >
           {PERIODS.map((p) => (
             <button
               key={p.value}
               type="button"
               className={`ws-period-btn ${activePeriod === p.value ? "active" : ""}`}
-              onClick={() => onPeriodChange && onPeriodChange(p.value)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onPeriodChange) {
+                  onPeriodChange(p.value);
+                }
+              }}
               disabled={loading}
+              style={{
+                cursor: loading ? "not-allowed" : "pointer",
+                pointerEvents: "auto",
+                position: "relative",
+                zIndex: 31,
+              }}
             >
               {p.label}
             </button>

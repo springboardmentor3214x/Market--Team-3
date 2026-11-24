@@ -1,18 +1,21 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import {
   motion,
   useScroll,
   useTransform,
   useSpring,
-  useMotionValue,
 } from "framer-motion";
 
 /**
  * Scroll3DMotionBox
- * Premium scroll-driven 3D motion container inspired by Ballast 3D architecture:
+ * Scroll-driven 3D motion container inspired by Ballast:
  * Binds 3D perspective pitch (rotateX), physical z-depth translation (translateZ),
- * vertical parallax float (translateY), specular light sheen sweep, and reactive
+ * vertical parallax float (translateY), specular sheen sweep, and reactive
  * holographic shadows directly to normalized scroll progress.
+ *
+ * NOTE: Mouse parallax has been decoupled from the interactive card body so that
+ * buttons (1M, 3M, 6M period selectors, tabs, controls) remain 100% clickable,
+ * stationary, and responsive under the user's cursor without subpixel jitter.
  */
 export default function Scroll3DMotionBox({
   children,
@@ -22,7 +25,6 @@ export default function Scroll3DMotionBox({
   glowColor = "#00ff87",
 }) {
   const containerRef = useRef(null);
-  const [isHovered, setIsHovered] = useState(false);
 
   // 1. Scroll-driven 3D progression relative to viewport
   const { scrollYProgress } = useScroll({
@@ -37,42 +39,41 @@ export default function Scroll3DMotionBox({
     restDelta: 0.001,
   });
 
-  // 3D Motion transforms:
-  // - Entering from bottom (0 to 0.4): pitches forward (+14deg), pushed back in Z-depth (-60px), floats up (+35px)
-  // - Centered in focus (0.45 to 0.55): perfectly level (0deg), lifted forward in Z-depth (+12px), scale 1.0
-  // - Exiting to top (0.6 to 1.0): pitches backward (-12deg), recedes into Z-depth (-50px), floats upward (-30px)
+  // 3D Motion transforms bound strictly to scroll:
+  // - Entering from bottom (0 to 0.35): pitches forward (+14deg), smooth float (+30px)
+  // - Centered in focus (0.4 to 0.6): level (0deg), lifted slightly (+10px), scale 1.0
+  // - Exiting to top (0.65 to 1.0): pitches backward (-12deg), smooth exit (-25px)
   const rotateX = useTransform(
     smoothProgress,
     [0, 0.3, 0.5, 0.7, 1],
-    [14, 5, 0, -5, -12]
+    [12, 4, 0, -4, -10]
   );
 
   const translateZ = useTransform(
     smoothProgress,
     [0, 0.35, 0.5, 0.7, 1],
-    [-60, -10, 12, -10, -50]
+    [0, 6, 12, 6, 0]
   );
 
   const translateY = useTransform(
     smoothProgress,
     [0, 0.35, 0.5, 0.7, 1],
-    [35, 10, 0, -10, -30]
+    [30, 8, 0, -8, -25]
   );
 
   const scale = useTransform(
     smoothProgress,
     [0, 0.3, 0.5, 0.7, 1],
-    [0.94, 0.985, 1.0, 0.985, 0.95]
+    [0.95, 0.985, 1.0, 0.985, 0.96]
   );
 
   const opacity = useTransform(
     smoothProgress,
     [0, 0.15, 0.85, 1],
-    [0.55, 1, 1, 0.75]
+    [0.65, 1, 1, 0.8]
   );
 
-  // Holographic Specular Light Sweep (Ballast-inspired chrome sheen)
-  // Glides across the card surface from -100% to +180% as you scroll
+  // Holographic Specular Light Sweep
   const sheenX = useTransform(
     smoothProgress,
     [0, 1],
@@ -85,33 +86,10 @@ export default function Scroll3DMotionBox({
     [0, 0.5, 1],
     [
       "0 10px 30px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 255, 135, 0.06)",
-      "0 24px 60px rgba(0, 0, 0, 0.8), 0 0 32px rgba(0, 255, 135, 0.22), 0 0 2px rgba(0, 229, 255, 0.4)",
+      "0 20px 50px rgba(0, 0, 0, 0.75), 0 0 28px rgba(0, 255, 135, 0.2), 0 0 2px rgba(0, 229, 255, 0.35)",
       "0 10px 30px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 229, 255, 0.06)",
     ]
   );
-
-  // 2. Mouse Parallax Tilt for Tactile Interactivity
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const mouseXSpring = useSpring(mouseX, { stiffness: 200, damping: 22 });
-  const mouseYSpring = useSpring(mouseY, { stiffness: 200, damping: 22 });
-  const mouseRotateY = useTransform(mouseXSpring, [-0.5, 0.5], [-5, 5]);
-  const mouseTiltX = useTransform(mouseYSpring, [-0.5, 0.5], [4, -4]);
-
-  const handleMouseMove = (e) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const xPct = (e.clientX - rect.left) / rect.width - 0.5;
-    const yPct = (e.clientY - rect.top) / rect.height - 0.5;
-    mouseX.set(xPct);
-    mouseY.set(yPct);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    mouseX.set(0);
-    mouseY.set(0);
-  };
 
   return (
     <div
@@ -120,18 +98,15 @@ export default function Scroll3DMotionBox({
       style={{
         perspective: "1100px",
         perspectiveOrigin: "50% 50%",
-        transformStyle: "preserve-3d",
         marginBottom: "32px",
         position: "relative",
+        zIndex: 5,
+        pointerEvents: "auto",
       }}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
     >
       <motion.div
         style={{
-          rotateX: isHovered ? mouseTiltX : rotateX,
-          rotateY: isHovered ? mouseRotateY : 0,
+          rotateX,
           translateZ,
           y: translateY,
           scale,
@@ -141,13 +116,11 @@ export default function Scroll3DMotionBox({
           willChange: "transform, opacity, box-shadow",
           position: "relative",
           borderRadius: "16px",
-          transition: isHovered
-            ? "none"
-            : "transform 0.1s ease-out, box-shadow 0.2s ease-out",
+          pointerEvents: "auto",
           ...style,
         }}
       >
-        {/* Holographic Specular Glint Sweep (Chrome Reflection Simulation) */}
+        {/* Holographic Specular Glint Sweep (Pointer Events Disabled) */}
         <motion.div
           style={{
             position: "absolute",
@@ -155,7 +128,7 @@ export default function Scroll3DMotionBox({
             borderRadius: "16px",
             pointerEvents: "none",
             overflow: "hidden",
-            zIndex: 2,
+            zIndex: 1,
           }}
         >
           <motion.div
@@ -173,14 +146,14 @@ export default function Scroll3DMotionBox({
           />
         </motion.div>
 
-        {/* 3D Cyber HUD Coordinate Tag */}
+        {/* 3D Cyber HUD Coordinate Tag (Pointer Events Disabled) */}
         {tag && (
           <div
             style={{
               position: "absolute",
               top: "-11px",
               right: "24px",
-              zIndex: 12,
+              zIndex: 3,
               background: "rgba(5, 8, 14, 0.92)",
               border: "1px solid rgba(0, 255, 135, 0.35)",
               backdropFilter: "blur(12px)",
@@ -196,7 +169,7 @@ export default function Scroll3DMotionBox({
               gap: "6px",
               pointerEvents: "none",
               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.6)",
-              transform: "translateZ(25px)",
+              transform: "translateZ(15px)",
             }}
           >
             <span
@@ -213,8 +186,14 @@ export default function Scroll3DMotionBox({
           </div>
         )}
 
-        {/* Card Content with 3D depth */}
-        <div style={{ transformStyle: "preserve-3d" }}>
+        {/* Interactive Card Content Container: Highest Z-Index & Clean Hit-Testing */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 10,
+            pointerEvents: "auto",
+          }}
+        >
           {children}
         </div>
       </motion.div>
