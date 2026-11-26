@@ -113,6 +113,26 @@ class TechnicalAnalysisOutput(BaseModel):
 # 3. News and Sentiment Analysis Agent Schemas
 # =============================================================================
 
+class CorporateEventSummary(BaseModel):
+    category: str
+    headline: str
+    significance: str
+    source_name: str
+    source_url: str
+    sentiment: str
+
+
+class ConflictingReportDetail(BaseModel):
+    topic: str
+    summary: str
+    source_a_name: str
+    source_a_claim: str
+    source_a_url: str
+    source_b_name: str
+    source_b_claim: str
+    source_b_url: str
+
+
 class NewsArticleItem(BaseModel):
     id: str
     title: str
@@ -123,7 +143,12 @@ class NewsArticleItem(BaseModel):
     sentiment: str = Field(..., description="Positive, Negative, or Neutral")
     sentiment_score: float = Field(..., description="Score from -1.0 to +1.0")
     keywords: List[str] = Field(default_factory=list)
-    event_category: Optional[str] = Field(None, description="Earnings, Acquisition, Regulatory, Product, General")
+    event_category: Optional[str] = Field(None, description="Earnings, Acquisition, Regulatory, Product, Leadership, General")
+    source_type: str = Field("news_report", description="'official_announcement' or 'news_report'")
+    is_official_announcement: bool = False
+    business_impact: Optional[str] = Field(None, description="Explanation of why this event is significant for the company")
+    verification_status: str = Field("Verified", description="Verified, Developing, or Unconfirmed Rumor")
+    is_conflicting: bool = False
 
 
 class NewsSentimentOutput(BaseModel):
@@ -135,9 +160,15 @@ class NewsSentimentOutput(BaseModel):
     average_sentiment_score: float = Field(..., description="Average polarity from -1.0 to +1.0")
     overall_sentiment_label: str = Field(..., description="Bullish, Bearish, or Neutral")
     key_corporate_events: List[str] = Field(default_factory=list)
+    corporate_events_detailed: List[CorporateEventSummary] = Field(default_factory=list)
     articles: List[NewsArticleItem] = Field(default_factory=list)
+    official_announcements_count: int = 0
+    news_reports_count: int = 0
     conflicting_reports_flag: bool = False
     conflicting_notes: Optional[str] = None
+    conflicting_reports: List[ConflictingReportDetail] = Field(default_factory=list)
+    uncertain_reports_flag: bool = False
+    uncertain_notes: Optional[str] = None
     summary_explanation: str
     analyzed_at: datetime = Field(default_factory=datetime.utcnow)
 

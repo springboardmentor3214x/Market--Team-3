@@ -202,8 +202,10 @@ export const fetchTechnicalAnalysis = async (ticker, market = "NSE", period = "6
   return data;
 };
 
-export const fetchNewsAnalysis = async (ticker, market = "NSE") => {
+export const fetchNewsAnalysis = async (ticker, market = "NSE", filters = {}) => {
   const params = new URLSearchParams({ ticker, market });
+  if (filters.sentiment) params.append("sentiment", filters.sentiment);
+  if (filters.source_type) params.append("source_type", filters.source_type);
   const res = await fetch(`${API_BASE_URL}/api/agents/news?${params.toString()}`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || "News analysis failed");

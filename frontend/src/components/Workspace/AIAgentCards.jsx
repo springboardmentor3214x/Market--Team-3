@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import TiltCard from "./TiltCard";
 import TechnicalIndicatorsModal from "./TechnicalIndicatorsModal";
+import NewsAnalysisModal from "./NewsAnalysisModal";
 
 export default function AIAgentCards({
   agentAnalysis = null,
@@ -28,6 +29,7 @@ export default function AIAgentCards({
   onSelectAgent = () => {},
 }) {
   const [techModalOpen, setTechModalOpen] = useState(false);
+  const [newsModalOpen, setNewsModalOpen] = useState(false);
   const fundamental = agentAnalysis?.fundamental;
   const technical = agentAnalysis?.technical;
   const news = agentAnalysis?.news;
@@ -108,14 +110,15 @@ export default function AIAgentCards({
       tag: "Agent #3",
       layerName: "03 // NEWS HEADLINES & REGULATORY MACRO SENTIMENT",
       telemetry: news
-        ? `Sentiment Score: ${news.overall_sentiment_score} (${news.overall_sentiment_label}) | Feeds: ${news.total_articles_analyzed} parsed | Conflict: ${news.conflicting_reports_flag ? "Detected" : "None"}`
+        ? `Sentiment Score: ${news.average_sentiment_score ?? news.overall_sentiment_score ?? 0} (${news.overall_sentiment_label}) | Feeds: ${news.total_articles_analyzed} parsed | Conflict: ${news.conflicting_reports_flag ? "Detected" : "None"}`
         : "Standby: Real-time NLP sentiment parsing across financial wires, press releases, and macro feeds.",
       chips: news
         ? [
             `Sentiment: ${news.overall_sentiment_label}`,
             `Articles: ${news.total_articles_analyzed}`,
+            news.official_announcements_count ? `${news.official_announcements_count} Official` : null,
             news.conflicting_reports_flag ? "⚠️ Conflicting News" : "Consistent Feeds",
-          ]
+          ].filter(Boolean)
         : ["Sentiment NLP", "Macro Wire Feeds", "Regulatory Reports"],
     },
     {
@@ -417,6 +420,35 @@ export default function AIAgentCards({
                 <span>Open Module 4 Studio</span>
               </button>
             )}
+            {currentAgent.id === "sentiment" && news && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewsModalOpen(true);
+                }}
+                style={{
+                  background: "rgba(45, 212, 191, 0.18)",
+                  border: "1px solid #2dd4bf",
+                  color: "#2dd4bf",
+                  padding: "5px 12px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontFamily: "var(--ws-font-mono, monospace)",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  whiteSpace: "nowrap",
+                  alignSelf: "center",
+                  boxShadow: "0 0 10px rgba(45, 212, 191, 0.25)",
+                }}
+              >
+                <Radio size={13} />
+                <span>Open Module 5 Studio</span>
+              </button>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -545,6 +577,30 @@ export default function AIAgentCards({
                         📊 CHARTS
                       </button>
                     )}
+                    {agent.id === "sentiment" && news && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNewsModalOpen(true);
+                        }}
+                        title="Open Module 5 News & Sentiment Studio"
+                        style={{
+                          fontSize: "9px",
+                          fontFamily: "var(--ws-font-mono, monospace)",
+                          background: "rgba(45, 212, 191, 0.22)",
+                          border: "1px solid #2dd4bf",
+                          color: "#2dd4bf",
+                          padding: "2px 7px",
+                          borderRadius: "4px",
+                          letterSpacing: "0.06em",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                        }}
+                      >
+                        📰 NEWS INTEL
+                      </button>
+                    )}
                     <span
                       className="ws-agent-tag"
                       style={{
@@ -646,6 +702,16 @@ export default function AIAgentCards({
           technicalData={technical}
           ticker={ticker || technical.ticker}
           currency={currency || technical.currency}
+        />
+      )}
+
+      {/* Module 5 News & Sentiment Analysis Agent Interactive Studio Modal */}
+      {news && (
+        <NewsAnalysisModal
+          isOpen={newsModalOpen}
+          onClose={() => setNewsModalOpen(false)}
+          newsData={news}
+          ticker={ticker || news.ticker}
         />
       )}
     </div>

@@ -8,6 +8,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from typing import Optional, List, Dict, Any
 import re
 import models, database, schemas, auth, market_service
 from agents import agent_orchestrator
@@ -432,17 +433,25 @@ def get_technical_analysis_by_path(
         raise HTTPException(status_code=500, detail=f"Technical analysis failed: {str(e)}")
 
 
-@app.get("/api/agents/news", tags=["Module 3: AI Agents"])
+@app.get("/api/agents/news", tags=["Module 5: News & Sentiment Analysis Agent"])
 def get_news_and_sentiment_analysis(
     ticker: str = Query(..., description="Stock ticker symbol (e.g. INFY.NS, AAPL)"),
     market: str = Query("NSE", description="Market context: NSE, BSE, NYSE, NASDAQ"),
+    sentiment: Optional[str] = Query(None, description="Optional filter by sentiment: Positive, Negative, Neutral"),
+    source_type: Optional[str] = Query(None, description="Optional filter: official_announcement or news_report"),
 ):
     """
-    Module 3 - Agent 3: News and Sentiment Analysis Agent.
-    Extracts real corporate headlines, detects event types, classifies sentiment, and checks conflicts.
+    Module 5: News and Sentiment Analysis Agent.
+    Retrieves real financial news, official company announcements, classifies contextual sentiment,
+    identifies key corporate events, and highlights conflicting or unverified reports.
     """
     try:
-        return agent_orchestrator.run_news(ticker=ticker, exchange=market)
+        output = agent_orchestrator.run_news(ticker=ticker, exchange=market)
+        if sentiment:
+            output.articles = [a for a in output.articles if a.sentiment.lower() == sentiment.lower()]
+        if source_type:
+            output.articles = [a for a in output.articles if a.source_type.lower() == source_type.lower()]
+        return output
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"News analysis failed: {str(e)}")
 
